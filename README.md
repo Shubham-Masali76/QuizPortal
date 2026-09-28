@@ -1,16 +1,61 @@
-# React + Vite
+# 🚀 QuizPortal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**QuizPortal** is a modern, real-time interactive quiz platform built with React, Vite, and Firebase. It allows hosts to create quizzes, bulk-import questions via CSV/Excel, and host them live for hundreds of participants with perfectly synchronized timers, live leaderboards, and instant analytics.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **🎓 Host Dashboard:** Create, manage, and edit quizzes effortlessly.
+- **📁 Bulk Import:** Import questions instantly using `.csv`, `.json`, or `.xlsx` files.
+- **⚡ Real-time Synchronization:** Powered by Firebase Realtime Database and Firestore, ensuring zero-lag state synchronization even with 500+ concurrent students.
+- **🏆 Live Leaderboards & Podium:** See the rankings update live as participants answer, ending with a beautiful top-3 podium celebration.
+- **📊 Analytics & Export:** Dive deep into quiz metrics and export complete participant data with one click, before clearing the data to reuse the quiz.
+- **⏱️ Fair Scoring:** Features a strictly clamped time-to-score calculation system that neutralizes client clock skew and rewards fast, accurate responses.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend:** React, Vite, Recharts, PapaParse, SheetJS
+- **Backend/Database:** Firebase Firestore (for persistent data), Firebase Realtime Database (for high-frequency live responses & presence)
+- **Authentication:** Firebase Auth
+- **Styling:** Custom CSS (Responsive & Animated)
 
-## Expanding the ESLint configuration
+## 🚀 Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/QuizPortal.git
+   cd QuizPortal
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Firebase Setup:**
+   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/).
+   - Enable **Authentication** (Email/Password).
+   - Enable **Firestore** and **Realtime Database**.
+   - Copy your Firebase config and place it in `src/services/firebase.js`.
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+## 📈 Scalability Note
+
+QuizPortal is explicitly architected to handle large classrooms (500+ participants). It utilizes chunked batch writes to bypass Firestore limits, prevents N² read explosions by delegating rank calculations to the host, and relies on RTDB for rapid heartbeat and presence tracking.
+
+## 📄 License
+
+This project is open-source and available under the MIT License.
