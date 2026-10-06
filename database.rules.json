@@ -4,7 +4,6 @@
       "$quizId": {
         ".read": true,
         "$participantId": {
-          ".write": "!newData.exists() || (newData.hasChildren(['state']) && newData.child('state').val() === 'online')",
           ".write": "!newData.exists() || (newData.hasChildren(['state']) && newData.child('state').val() == 'online')",
           ".validate": "newData.hasChildren(['state', 'joinedAt']) && newData.child('state').isString() && newData.child('joinedAt').isNumber()"
         }
@@ -15,11 +14,20 @@
         ".read": true,
         "$reactionId": {
           ".write": "!newData.exists() || (!data.exists() && newData.hasChildren(['emoji', 'participantId', 'createdAt']))",
-          ".validate": "!newData.exists() || (newData.hasChildren(['emoji', 'participantId', 'createdAt']) && newData.child('emoji').isString() && (newData.child('emoji').val() === '👍' || newData.child('emoji').val() === '🔥' || newData.child('emoji').val() === '😂' || newData.child('emoji').val() === '😮' || newData.child('emoji').val() === '👏') && newData.child('participantId').isString() && newData.child('createdAt').isNumber())"
-          ".validate": "newData.hasChildren(['emoji', 'participantId', 'createdAt']) && newData.child('emoji').isString() && (newData.child('emoji').val() == '👍' || newData.child('emoji').val() == '🔥' || newData.child('emoji').val() == '😂' || newData.child('emoji').val() == '😮' || newData.child('emoji').val() == '👏' || (newData.child('emoji').val().length >= 1 && newData.child('emoji').val().length <= 4)) && newData.child('participantId').isString() && newData.child('createdAt').isNumber()"
+          ".validate": "!newData.exists() || (newData.hasChildren(['emoji', 'participantId', 'createdAt']) && newData.child('emoji').isString() && (newData.child('emoji').val() == '👍' || newData.child('emoji').val() == '🔥' || newData.child('emoji').val() == '😂' || newData.child('emoji').val() == '😮' || newData.child('emoji').val() == '👏' || (newData.child('emoji').val().length >= 1 && newData.child('emoji').val().length <= 4)) && newData.child('participantId').isString() && newData.child('createdAt').isNumber())"
+        }
+      }
+    },
+    "responses": {
+      "$quizId": {
+        ".read": true,
+        "$questionIndex": {
+          "$participantId": {
+            ".write": "!data.exists()",
+            ".validate": "newData.hasChildren(['selectedOption', 'timestamp']) && newData.child('selectedOption').isNumber() && newData.child('timestamp').isNumber()"
+          }
         }
       }
     }
   }
 }
-
