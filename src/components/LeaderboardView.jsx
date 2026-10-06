@@ -24,18 +24,17 @@ export default function LeaderboardView({ participants }) {
   });
 
   useEffect(() => {
-
     // Start animation sequence
-    const t1 = setTimeout(() => setPhase(1), 500); // start slide
-    const t2 = setTimeout(() => setPhase(2), 1500); // merge scores
-    const t3 = setTimeout(() => setPhase(3), 2500); // reorder
+    const t1 = setTimeout(() => setPhase(1), 1500); // hold +points on right
+    const t2 = setTimeout(() => setPhase(2), 3000); // slide points and merge
+    const t3 = setTimeout(() => setPhase(3), 4500); // reorder rows
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [participants]);
+  }, []);
 
   // For phase 3, we need to know the new order.
   const newOrderMap = {};
@@ -98,12 +97,13 @@ export default function LeaderboardView({ participants }) {
             {p.earned > 0 && phase < 2 && (
               <div style={{ 
                 position: 'absolute', 
-                right: phase === 1 ? 'calc(100% - 100px)' : '10px', 
+                right: phase === 1 ? 'calc(100% - 100px)' : '20px', 
                 color: '#28a745', 
                 fontWeight: 'bold', 
                 fontSize: '1.5rem',
-                opacity: phase === 1 ? 0 : 1,
-                transition: 'all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                opacity: 1,
+                transition: 'right 1.5s ease-in-out',
+                zIndex: 10
               }}>
                 +{p.earned}
               </div>
