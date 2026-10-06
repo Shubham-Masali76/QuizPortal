@@ -348,13 +348,15 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
                 return (
                   <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
                     <span style={{ marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '1.5rem' }}>{votes}</span>
-                    <div style={{ 
-                      width: '100%', 
-                      height: `${Math.max(heightPct, 2)}%`, 
-                      backgroundColor: isCorrect ? '#4ade80' : colors[idx % colors.length], 
-                      transition: 'height 1s ease-out',
-                      borderRadius: '4px 4px 0 0'
-                    }}></div>
+                    <div style={{ height: '250px', width: '100%', display: 'flex', alignItems: 'flex-end' }}>
+                      <div style={{ 
+                        width: '100%', 
+                        height: `${Math.max(heightPct, 2)}%`, 
+                        backgroundColor: isCorrect ? '#4ade80' : colors[idx % colors.length], 
+                        transition: 'height 1s ease-out',
+                        borderRadius: '4px 4px 0 0'
+                      }}></div>
+                    </div>
                     <span style={{ marginTop: '1rem', textAlign: 'center', fontSize: '1rem', color: '#666', minHeight: '40px' }}>{opt}</span>
                   </div>
                 );
