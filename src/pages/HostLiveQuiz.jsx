@@ -4,6 +4,7 @@ import { ref as rtdbRef, onValue } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import LeaderboardView from "../components/LeaderboardView";
 import PodiumView from "../components/PodiumView";
+import { useRef } from "react";
 
 const HostLiveQuiz = ({ quizId, setPage }) => {
   const [questions, setQuestions] = useState([]);
@@ -13,6 +14,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
   const [responses, setResponses] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [quizData, setQuizData] = useState(null);
+  const isTransitioning = useRef(false);
 
   const updateQuizState = useCallback(async (index, status, timeLimit = 0) => {
     setCurrentQuestionIndex(index);
@@ -31,6 +33,12 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
   }, [quizId]);
 
   const handleShowResults = useCallback(async () => {
+    if (isTransitioning.current) return;
+    isTransitioning.current = true;
+    
+    // Set local state immediately to avoid re-triggering
+    setQuizStatus("results");
+
     // 1. Calculate scores and batch update participants
     if (quizData && currentQuestionIndex >= 0) {
       const currentQuestion = questions[currentQuestionIndex];
@@ -122,6 +130,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
     await updateQuizState(currentQuestionIndex, "results");
     await updateDoc(doc(db, "quizzes", quizId), { questionStatus: "results" });
+    isTransitioning.current = false;
   }, [quizId, currentQuestionIndex, updateQuizState, responses, questions, quizData, participants]);
 
   const handleShowLeaderboard = async () => {
@@ -200,32 +209,47 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
   // Timer logic
   const handleStartAnswering = useCallback(async () => {
+    if (isTransitioning.current) return;
+    isTransitioning.current = true;
+    
     const aLimit = quizData?.answeringTimeLimit || 20;
     setTimeLeft(aLimit);
     await updateQuizState(currentQuestionIndex, "answering", aLimit);
+    
+    isTransitioning.current = false;
   }, [quizData, currentQuestionIndex, updateQuizState]);
 
   useEffect(() => {
     let timer;
-    if ((quizStatus === "reading" || quizStatus === "answering") && timeLeft > 0) {
+    if (quizStatus === "reading" || quizStatus === "answering") {
       timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (timeLeft === 0) {
-      if (quizStatus === "reading") {
-        setTimeout(() => {
-          handleStartAnswering();
-        }, 0);
-      } else if (quizStatus === "answering") {
-        setTimeout(() => {
-          handleShowResults();
-        }, 0);
-      }
     }
     return () => clearInterval(timer);
-  }, [quizStatus, timeLeft, handleStartAnswering, handleShowResults]);
+  }, [quizStatus]);
+
+  useEffect(() => {
+    if (timeLeft === 0 && !isTransitioning.current) {
+      if (quizStatus === "reading") {
+        handleStartAnswering();
+      } else if (quizStatus === "answering") {
+        handleShowResults();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, quizStatus]); // exclude handlers so we don't re-trigger on response updates
 
   const handleNextQuestion = async () => {
+    if (isTransitioning.current) return;
+    isTransitioning.current = true;
+    
     if (currentQuestionIndex + 1 < questions.length) {
       const rLimit = quizData?.readingTimeLimit || 10;
       setTimeLeft(rLimit);
@@ -234,6 +258,8 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
       setQuizStatus("leaderboard");
       await updateDoc(doc(db, "quizzes", quizId), { status: "completed", questionStatus: "closed" });
     }
+    
+    isTransitioning.current = false;
   };
 
   const handleEndQuiz = async () => {

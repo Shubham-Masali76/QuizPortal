@@ -62,23 +62,22 @@ export default function ParticipantLiveQuiz({ quizId, participantId, onLeave }) 
     const unsub = onSnapshot(doc(db, "quizzes", quizId), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setQuizState(prev => {
-          // Reset selection if moving to a new question
-          if (prev.currentQuestionIndex !== data.currentQuestionIndex) {
-            setSelectedOption(null);
-            setHasSubmitted(false);
-          }
-          return {
-            currentQuestionIndex: data.currentQuestionIndex || 0,
-            questionStatus: data.questionStatus || "reading",
-            status: data.status,
-            phaseEndTime: data.phaseEndTime || null,
-          };
+        setQuizState({
+          currentQuestionIndex: data.currentQuestionIndex || 0,
+          questionStatus: data.questionStatus || "reading",
+          status: data.status,
+          phaseEndTime: data.phaseEndTime || null,
         });
       }
     });
     return () => unsub();
   }, [quizId]);
+
+  useEffect(() => {
+    // Reset selection if moving to a new question
+    setSelectedOption(null);
+    setHasSubmitted(false);
+  }, [quizState.currentQuestionIndex]);
 
   const handleSelectOption = async (optionIndex) => {
     if (hasSubmitted || quizState.questionStatus !== "answering") return;
@@ -96,6 +95,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, onLeave }) 
       // Revert if failed
       setSelectedOption(null);
       setHasSubmitted(false);
+      alert("Error saving response: " + err.message);
     }
   };
 

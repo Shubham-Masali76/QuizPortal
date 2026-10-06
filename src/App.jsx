@@ -96,6 +96,8 @@ function App() {
   const [message, setMessage] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState(null);
+  const [showDeleteQuizDialog, setShowDeleteQuizDialog] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -462,6 +464,32 @@ function App() {
     }
   };
 
+  const handleDeleteQuiz = (e, quiz) => {
+    e.stopPropagation();
+    setQuizToDelete(quiz);
+    setShowDeleteQuizDialog(true);
+  };
+
+  const confirmDeleteQuiz = async () => {
+    try {
+      await deleteDoc(doc(db, "quizzes", quizToDelete.id));
+      setShowDeleteQuizDialog(false);
+      setQuizToDelete(null);
+      await handleMyQuizzes();
+      setMessage("Quiz deleted successfully!");
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    } catch (error) {
+      console.error("Error deleting quiz:", error);
+      setShowDeleteQuizDialog(false);
+      setMessage("Something went wrong while deleting the quiz.");
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    }
+  };
+
   const handleMyQuizzes = async () => {
     try {
       const quizzesQuery = query(
@@ -801,8 +829,15 @@ function App() {
                       <h3>{quiz.title}</h3>
                       <p>{quiz.description}</p>
 
-                      <div className="quiz-item-footer" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <div className="quiz-item-footer" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span className="edit-text">Click to edit →</span>
+                        <button 
+                          className="delete-question-btn" 
+                          style={{ padding: '0.2rem 0.8rem', fontSize: '0.9rem', marginLeft: 'auto' }}
+                          onClick={(e) => handleDeleteQuiz(e, quiz)}
+                        >
+                          Delete
+                        </button>
                         { (quiz.status === "completed" || quiz.status === "finished") && (
                            <button 
                              className="secondary-btn" 
@@ -835,6 +870,31 @@ function App() {
             </div>
           </main>
           <Toast message={message} />
+          {showDeleteQuizDialog && (
+            <div className="dialog-overlay">
+              <div className="dialog-box">
+                <h2>Delete Quiz?</h2>
+                <p>Are you sure you want to delete this quiz? This action cannot be undone.</p>
+                <div className="dialog-actions">
+                  <button
+                    className="dialog-cancel-btn"
+                    onClick={() => {
+                      setShowDeleteQuizDialog(false);
+                      setQuizToDelete(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="dialog-delete-btn"
+                    onClick={confirmDeleteQuiz}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </DashboardLayout>
       </div>
     );
