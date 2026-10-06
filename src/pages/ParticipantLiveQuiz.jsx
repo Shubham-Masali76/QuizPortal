@@ -185,9 +185,20 @@ export default function ParticipantLiveQuiz({ quizId, participantId, onLeave }) 
       )}
       
       {quizState.questionStatus === "results" && (
-        <div className="closed-state" style={{ padding: '3rem 1rem', background: '#fff3cd', borderRadius: '12px', border: '2px solid #ffeeba', color: '#856404' }}>
-          <h3>Time's Up!</h3>
-          <p style={{ marginTop: '1rem' }}>Look at the host screen for results.</p>
+        <div className="results-state" style={{ padding: '3rem 1rem', background: participantData?.lastPointsEarned > 0 ? '#d4edda' : '#f8d7da', borderRadius: '12px', border: `2px solid ${participantData?.lastPointsEarned > 0 ? '#c3e6cb' : '#f5c6cb'}`, color: participantData?.lastPointsEarned > 0 ? '#155724' : '#721c24' }}>
+          <h3>{participantData?.lastPointsEarned > 0 ? "Correct!" : "Incorrect"}</h3>
+          
+          <div style={{ margin: '2rem 0', fontSize: '3rem', fontWeight: 'bold' }}>
+            +{participantData?.lastPointsEarned || 0} <span style={{ fontSize: '1.5rem' }}>points</span>
+          </div>
+
+          {participantData?.lastResponseTimeMs !== undefined && (
+            <p style={{ fontSize: '1.2rem', marginTop: '1rem' }}>
+              You answered in <strong>{(participantData.lastResponseTimeMs / 1000).toFixed(2)}s</strong>
+            </p>
+          )}
+
+          <p style={{ marginTop: '2rem', fontStyle: 'italic' }}>Look at the host screen for the chart.</p>
         </div>
       )}
 
