@@ -5,7 +5,9 @@ import { CpuIcon } from "./NeonIcons";
 export default function NeonLoadingScreen({ 
   title = "QuizPortal",
   subtitle = "AWS STUDENT BUILDER GROUP • NKOCET",
-  status = "INITIALIZING PORTAL SESSION..."
+  status = "INITIALIZING PORTAL SESSION...",
+  isExiting = false,
+  overlay = true
 }) {
   const [currentStatus, setCurrentStatus] = useState(status);
 
@@ -13,15 +15,20 @@ export default function NeonLoadingScreen({
     if (status === "INITIALIZING PORTAL SESSION...") {
       const t1 = setTimeout(() => {
         setCurrentStatus("ESTABLISHING AWS SECURE PROTOCOL...");
-      }, 350);
+      }, 500);
 
       const t2 = setTimeout(() => {
         setCurrentStatus("SYNCHRONIZING PORTAL ASSETS...");
-      }, 700);
+      }, 1100);
+
+      const t3 = setTimeout(() => {
+        setCurrentStatus("READY • LAUNCHING ARENA...");
+      }, 1650);
 
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
+        clearTimeout(t3);
       };
     } else {
       setCurrentStatus(status);
@@ -29,9 +36,12 @@ export default function NeonLoadingScreen({
   }, [status]);
 
   return (
-    <div className="neon-theme-wrapper neon-centered-wrapper" style={{ minHeight: "100vh", overflow: "hidden" }}>
+    <div 
+      className={`neon-theme-wrapper neon-centered-wrapper ${overlay ? "neon-loader-overlay" : ""} ${isExiting ? "neon-loader-exiting" : ""}`} 
+      style={{ minHeight: "100vh", overflow: "hidden" }}
+    >
       <NeonBackground />
-      <div className="neon-loader-container">
+      <div className={`neon-loader-container ${isExiting ? "neon-loader-content-exiting" : ""}`}>
         {/* Holographic Glowing Core with Dual Orbiting Rings */}
         <div className="neon-loader-glow-orb">
           <div className="neon-loader-ring neon-ring-outer" />

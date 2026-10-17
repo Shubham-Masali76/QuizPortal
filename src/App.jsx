@@ -76,6 +76,8 @@ function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showLoadingPortal, setShowLoadingPortal] = useState(true);
+  const [isLoaderExiting, setIsLoaderExiting] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [authPage, setAuthPage] = useState("login");
   const [page, setPage] = useState("dashboard");
@@ -117,7 +119,11 @@ function App() {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, MIN_LOADING_TIME - elapsed);
       setTimeout(() => {
-        setAuthLoading(false);
+        setIsLoaderExiting(true);
+        setTimeout(() => {
+          setShowLoadingPortal(false);
+          setAuthLoading(false);
+        }, 650);
       }, remaining);
     });
 
@@ -537,9 +543,7 @@ function App() {
     }
   };
 
-  if (authLoading) {
-    return <NeonLoadingScreen />;
-  }
+  const renderAppContent = () => {
 
   if (!selectedRole) {
     return <RoleSelection onSelectRole={setSelectedRole} />;
@@ -1082,6 +1086,20 @@ function App() {
       </DashboardLayout>
     );
   }
+
+    return null;
+  };
+
+  return (
+    <>
+      <div className={`app-content-transition ${isLoaderExiting ? "app-content-revealed" : "app-content-hidden"}`}>
+        {renderAppContent()}
+      </div>
+      {showLoadingPortal && (
+        <NeonLoadingScreen isExiting={isLoaderExiting} />
+      )}
+    </>
+  );
 }
 
 export default App;

@@ -1613,8 +1613,61 @@
 }
 
 /* =========================================================
-   NEON PORTAL INITIALIZATION LOADER
+   NEON PORTAL INITIALIZATION LOADER & DISSOLVE TRANSITIONS
    ========================================================= */
+
+.neon-loader-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  background: #07040f !important;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
+.neon-loader-overlay.neon-loader-exiting {
+  opacity: 0 !important;
+  visibility: hidden;
+  pointer-events: none !important;
+}
+
+.neon-loader-content-exiting {
+  transform: scale(1.05) translateY(-8px) !important;
+  filter: blur(8px) !important;
+  opacity: 0 !important;
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: transform, filter, opacity;
+}
+
+/* App Content Transition Revealer */
+.app-content-transition {
+  width: 100%;
+  min-height: 100vh;
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.app-content-transition.app-content-hidden {
+  opacity: 0.65;
+  transform: scale(0.985);
+}
+
+.app-content-transition.app-content-revealed {
+  opacity: 1;
+  transform: scale(1);
+}
 
 .neon-loader-container {
   display: flex;
