@@ -14,7 +14,6 @@ export default function ParticipantLiveQuiz({ quizId, participantId, onLeave }) 
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [participantData, setParticipantData] = useState(null);
-  const [prevQuestionIndex, setPrevQuestionIndex] = useState(0);
 
 
   useEffect(() => {
@@ -74,12 +73,19 @@ export default function ParticipantLiveQuiz({ quizId, participantId, onLeave }) 
     return () => unsub();
   }, [quizId]);
 
-  // Reset selection if moving to a new question
-  if (quizState.currentQuestionIndex !== prevQuestionIndex) {
-    setPrevQuestionIndex(quizState.currentQuestionIndex);
+  useEffect(() => {
+    // Reset selection whenever question index changes
     setSelectedOption(null);
     setHasSubmitted(false);
-  }
+  }, [quizState.currentQuestionIndex]);
+
+  useEffect(() => {
+    // Reset selection when entering reading phase
+    if (quizState.questionStatus === "reading") {
+      setSelectedOption(null);
+      setHasSubmitted(false);
+    }
+  }, [quizState.questionStatus]);
 
   const handleSelectOption = async (optionIndex) => {
     if (hasSubmitted || quizState.questionStatus !== "answering") return;

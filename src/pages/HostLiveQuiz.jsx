@@ -1,34 +1,38 @@
-import { useState, useEffect, useCallback } from "react";
-import { doc, updateDoc, collection, getDocs, onSnapshot, query, writeBatch } from "firebase/firestore";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { doc, getDoc, updateDoc, collection, getDocs, onSnapshot, query, writeBatch } from "firebase/firestore";
 import { ref as rtdbRef, onValue } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import LeaderboardView from "../components/LeaderboardView";
 import PodiumView from "../components/PodiumView";
-import { useRef } from "react";
 
 const HostLiveQuiz = ({ quizId, setPage }) => {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [quizStatus, setQuizStatus] = useState("loading"); // loading, reading, answering, results, leaderboard
+  const [quizStatus, setQuizStatus] = useState("loading"); // loading, reading, answering, results, question_leaderboard, leaderboard
   const [timeLeft, setTimeLeft] = useState(0);
   const [responses, setResponses] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [quizData, setQuizData] = useState(null);
   const isTransitioning = useRef(false);
+  const currentPhaseEndTime = useRef(null);
 
   const updateQuizState = useCallback(async (index, status, timeLimit = 0) => {
-    setCurrentQuestionIndex(index);
+    const numIndex = Number(index);
+    setCurrentQuestionIndex(numIndex);
     setQuizStatus(status);
     
     const updateData = {
-      currentQuestionIndex: index,
-      questionStatus: status, // "reading", "answering", "closed"
+      currentQuestionIndex: numIndex,
+      questionStatus: status, // "reading", "answering", "results", "question_leaderboard", "closed"
     };
 
     if (timeLimit > 0) {
-      updateData.phaseEndTime = Date.now() + (timeLimit * 1000);
+      const endTime = Date.now() + (timeLimit * 1000);
+      updateData.phaseEndTime = endTime;
+      currentPhaseEndTime.current = endTime;
     }
 
+    setQuizData(prev => prev ? { ...prev, ...updateData } : updateData);
     await updateDoc(doc(db, "quizzes", quizId), updateData);
   }, [quizId]);
 
@@ -36,119 +40,130 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     if (isTransitioning.current) return;
     isTransitioning.current = true;
     
-    // Set local state immediately to avoid re-triggering
-    setQuizStatus("results");
+    try {
+      // Set local state immediately to avoid re-triggering
+      setQuizStatus("results");
 
-    // 1. Calculate scores and batch update participants
-    if (quizData && currentQuestionIndex >= 0) {
-      const currentQuestion = questions[currentQuestionIndex];
-      
-      const updates = {};
-      // Calculate scores first
-      participants.forEach(p => {
-        updates[p.id] = { ...p, lastPointsEarned: 0 };
-      });
-
-      responses.forEach(resp => {
-        if (!updates[resp.participantId]) return;
+      // 1. Calculate scores and batch update participants
+      if (currentQuestionIndex >= 0 && questions[currentQuestionIndex]) {
+        const currentQuestion = questions[currentQuestionIndex];
         
-        let pointsEarned = 0;
-        const maxTime = quizData.answeringTimeLimit || 20;
-        const phaseEnd = quizData.phaseEndTime || Date.now();
+        const updates = {};
+        // Calculate scores first
+        participants.forEach(p => {
+          updates[p.id] = { ...p, lastPointsEarned: 0 };
+        });
+
+        const maxTime = quizData?.answeringTimeLimit || 20;
+        const phaseEnd = currentPhaseEndTime.current || quizData?.phaseEndTime || Date.now();
+
+        responses.forEach(resp => {
+          if (!updates[resp.participantId]) return;
+          
+          let pointsEarned = 0;
+          
+          // Clamp timeTakenMs to [0, maxTime * 1000] to handle clock skew perfectly
+          let timeTakenMs = resp.timestamp - (phaseEnd - (maxTime * 1000));
+          timeTakenMs = Math.max(0, Math.min(timeTakenMs, maxTime * 1000));
+          const timeTakenSec = timeTakenMs / 1000;
+
+          updates[resp.participantId].lastResponseTimeMs = timeTakenMs;
+
+          if (resp.selectedOption === currentQuestion.correctAnswer) {
+            const speedMultiplier = Math.max(0, 1 - (timeTakenSec / maxTime));
+            pointsEarned = 500 + Math.round(500 * speedMultiplier);
+            updates[resp.participantId].correctAnswersCount = (updates[resp.participantId].correctAnswersCount || 0) + 1;
+          }
+          
+          updates[resp.participantId].lastPointsEarned = pointsEarned;
+          updates[resp.participantId].score = (updates[resp.participantId].score || 0) + pointsEarned;
+          updates[resp.participantId].totalResponseTimeMs = (updates[resp.participantId].totalResponseTimeMs || 0) + timeTakenMs;
+        });
+
+        // Sort and assign exact Rank
+        const updatedParticipantsArray = Object.values(updates);
+        updatedParticipantsArray.sort((a, b) => {
+          if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+          if ((b.correctAnswersCount || 0) !== (a.correctAnswersCount || 0)) return (b.correctAnswersCount || 0) - (a.correctAnswersCount || 0);
+          if ((a.totalResponseTimeMs || 0) !== (b.totalResponseTimeMs || 0)) return (a.totalResponseTimeMs || 0) - (b.totalResponseTimeMs || 0);
+          return (a.lastResponseTimeMs || 0) - (b.lastResponseTimeMs || 0);
+        });
+
+        updatedParticipantsArray.forEach((p, index) => {
+           updates[p.id].rank = index + 1;
+        });
+
+        // Chunk batch operations to avoid 500 limit
+        const chunkedBatches = [];
+        let currentBatch = writeBatch(db);
+        let opCount = 0;
+
+        Object.keys(updates).forEach(pid => {
+          if (opCount >= 490) {
+            chunkedBatches.push(currentBatch);
+            currentBatch = writeBatch(db);
+            opCount = 0;
+          }
+          const pRef = doc(db, "quizzes", quizId, "participants", pid);
+          const pUpdates = { 
+            lastPointsEarned: updates[pid].lastPointsEarned || 0,
+            score: updates[pid].score || 0,
+            rank: updates[pid].rank || 1,
+          };
+          
+          if (updates[pid].lastResponseTimeMs !== undefined) {
+             pUpdates.lastResponseTimeMs = updates[pid].lastResponseTimeMs;
+             pUpdates.totalResponseTimeMs = updates[pid].totalResponseTimeMs;
+          }
+          if (updates[pid].correctAnswersCount !== undefined) {
+             pUpdates.correctAnswersCount = updates[pid].correctAnswersCount;
+          }
+          
+          currentBatch.update(pRef, pUpdates);
+          opCount++;
+        });
         
-        // Clamp timeTakenMs to [0, maxTime * 1000] to handle clock skew perfectly
-        let timeTakenMs = resp.timestamp - (phaseEnd - (maxTime * 1000));
-        timeTakenMs = Math.max(0, Math.min(timeTakenMs, maxTime * 1000));
-        const timeTakenSec = timeTakenMs / 1000;
-
-        updates[resp.participantId].lastResponseTimeMs = timeTakenMs;
-
-        if (resp.selectedOption === currentQuestion.correctAnswer) {
-          const speedMultiplier = Math.max(0, 1 - (timeTakenSec / maxTime));
-          pointsEarned = 500 + Math.round(500 * speedMultiplier);
-          updates[resp.participantId].correctAnswersCount = (updates[resp.participantId].correctAnswersCount || 0) + 1;
-        }
-        
-        updates[resp.participantId].lastPointsEarned = pointsEarned;
-        updates[resp.participantId].score = (updates[resp.participantId].score || 0) + pointsEarned;
-        updates[resp.participantId].totalResponseTimeMs = (updates[resp.participantId].totalResponseTimeMs || 0) + timeTakenMs;
-      });
-
-      // Sort and assign exact Rank
-      const updatedParticipantsArray = Object.values(updates);
-      // We import sortParticipants at the top if we need to, but it's not imported yet in HostLiveQuiz!
-      // Let's implement a quick inline sort identical to the helper
-      updatedParticipantsArray.sort((a, b) => {
-        if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
-        if ((b.correctAnswersCount || 0) !== (a.correctAnswersCount || 0)) return (b.correctAnswersCount || 0) - (a.correctAnswersCount || 0);
-        if ((a.totalResponseTimeMs || 0) !== (b.totalResponseTimeMs || 0)) return (a.totalResponseTimeMs || 0) - (b.totalResponseTimeMs || 0);
-        return (a.lastResponseTimeMs || 0) - (b.lastResponseTimeMs || 0);
-      });
-
-      updatedParticipantsArray.forEach((p, index) => {
-         updates[p.id].rank = index + 1;
-      });
-
-      // Chunk batch operations to avoid 500 limit
-      const chunkedBatches = [];
-      let currentBatch = writeBatch(db);
-      let opCount = 0;
-
-      Object.keys(updates).forEach(pid => {
-        if (opCount >= 490) {
+        if (opCount > 0) {
           chunkedBatches.push(currentBatch);
-          currentBatch = writeBatch(db);
-          opCount = 0;
-        }
-        const pRef = doc(db, "quizzes", quizId, "participants", pid);
-        const pUpdates = { 
-          lastPointsEarned: updates[pid].lastPointsEarned || 0,
-          score: updates[pid].score || 0,
-          rank: updates[pid].rank || 1,
-        };
-        
-        if (updates[pid].lastResponseTimeMs !== undefined) {
-           pUpdates.lastResponseTimeMs = updates[pid].lastResponseTimeMs;
-           pUpdates.totalResponseTimeMs = updates[pid].totalResponseTimeMs;
-        }
-        if (updates[pid].correctAnswersCount !== undefined) {
-           pUpdates.correctAnswersCount = updates[pid].correctAnswersCount;
         }
         
-        currentBatch.update(pRef, pUpdates);
-        opCount++;
-      });
-      
-      if (opCount > 0) {
-        chunkedBatches.push(currentBatch);
+        for (const b of chunkedBatches) {
+          await b.commit();
+        }
       }
-      
-      for (const b of chunkedBatches) {
-        await b.commit();
-      }
-    }
 
-    await updateQuizState(currentQuestionIndex, "results");
-    await updateDoc(doc(db, "quizzes", quizId), { questionStatus: "results" });
-    isTransitioning.current = false;
+      await updateQuizState(currentQuestionIndex, "results");
+    } catch (err) {
+      console.error("Error in handleShowResults:", err);
+    } finally {
+      isTransitioning.current = false;
+    }
   }, [quizId, currentQuestionIndex, updateQuizState, responses, questions, quizData, participants]);
 
   const handleShowLeaderboard = async () => {
-    await updateQuizState(currentQuestionIndex, "question_leaderboard");
-    await updateDoc(doc(db, "quizzes", quizId), { questionStatus: "question_leaderboard" });
+    if (isTransitioning.current) return;
+    isTransitioning.current = true;
+    try {
+      await updateQuizState(currentQuestionIndex, "question_leaderboard");
+    } catch (err) {
+      console.error("Error in handleShowLeaderboard:", err);
+    } finally {
+      isTransitioning.current = false;
+    }
   };
 
   // Fetch all questions and participants on mount
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // Fetch quiz data to get timer limits
-        const getDoc = await import("firebase/firestore").then(m => m.getDoc);
         const qzSnap = await getDoc(doc(db, "quizzes", quizId));
         let qData = {};
         if (qzSnap.exists()) {
           qData = qzSnap.data();
           setQuizData(qData);
+          if (qData.phaseEndTime) {
+            currentPhaseEndTime.current = qData.phaseEndTime;
+          }
         }
 
         // Fetch questions
@@ -156,17 +171,38 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
         const qList = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         setQuestions(qList);
 
-        // Start first question
-        if (qList.length > 0 && qData.status === "live" && !qData.questionStatus) {
-          const rLimit = qData.readingTimeLimit || 10;
+        if (qList.length === 0) {
+          setQuizStatus("error"); // No questions
+          return;
+        }
+
+        const rLimit = qData.readingTimeLimit || 10;
+        const aLimit = qData.answeringTimeLimit || 20;
+
+        // If the quiz is starting fresh or has uninitialized state:
+        const isFresh = !qData.questionStatus ||
+                        qData.questionStatus === "closed" ||
+                        qData.currentQuestionIndex === undefined ||
+                        qData.currentQuestionIndex === null;
+
+        if (isFresh) {
           setTimeLeft(rLimit);
           await updateQuizState(0, "reading", rLimit);
-        } else if (qList.length === 0) {
-          setQuizStatus("error"); // No questions
         } else {
           // Resume quiz state
-          setQuizStatus(qData.questionStatus || "reading");
-          setCurrentQuestionIndex(qData.currentQuestionIndex || 0);
+          const activeIndex = Number(qData.currentQuestionIndex) || 0;
+          setCurrentQuestionIndex(activeIndex);
+          const currentStatus = qData.questionStatus || "reading";
+          setQuizStatus(currentStatus);
+
+          if (qData.phaseEndTime) {
+            const remaining = Math.max(0, Math.round((qData.phaseEndTime - Date.now()) / 1000));
+            setTimeLeft(remaining);
+          } else if (currentStatus === "reading") {
+            setTimeLeft(rLimit);
+          } else if (currentStatus === "answering") {
+            setTimeLeft(aLimit);
+          }
         }
       } catch (err) {
         console.error("Failed to load quiz data", err);
@@ -212,11 +248,15 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     if (isTransitioning.current) return;
     isTransitioning.current = true;
     
-    const aLimit = quizData?.answeringTimeLimit || 20;
-    setTimeLeft(aLimit);
-    await updateQuizState(currentQuestionIndex, "answering", aLimit);
-    
-    isTransitioning.current = false;
+    try {
+      const aLimit = quizData?.answeringTimeLimit || 20;
+      setTimeLeft(aLimit);
+      await updateQuizState(currentQuestionIndex, "answering", aLimit);
+    } catch (err) {
+      console.error("Error starting answering phase:", err);
+    } finally {
+      isTransitioning.current = false;
+    }
   }, [quizData, currentQuestionIndex, updateQuizState]);
 
   useEffect(() => {
@@ -250,16 +290,22 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     if (isTransitioning.current) return;
     isTransitioning.current = true;
     
-    if (currentQuestionIndex + 1 < questions.length) {
-      const rLimit = quizData?.readingTimeLimit || 10;
-      setTimeLeft(rLimit);
-      await updateQuizState(currentQuestionIndex + 1, "reading", rLimit);
-    } else {
-      setQuizStatus("leaderboard");
-      await updateDoc(doc(db, "quizzes", quizId), { status: "completed", questionStatus: "closed" });
+    try {
+      const nextIndex = Number(currentQuestionIndex) + 1;
+      if (nextIndex < questions.length) {
+        const rLimit = quizData?.readingTimeLimit || 10;
+        setTimeLeft(rLimit);
+        setResponses([]);
+        await updateQuizState(nextIndex, "reading", rLimit);
+      } else {
+        setQuizStatus("leaderboard");
+        await updateDoc(doc(db, "quizzes", quizId), { status: "completed", questionStatus: "closed" });
+      }
+    } catch (err) {
+      console.error("Error progressing to next question:", err);
+    } finally {
+      isTransitioning.current = false;
     }
-    
-    isTransitioning.current = false;
   };
 
   const handleEndQuiz = async () => {
@@ -273,7 +319,11 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     return <div className="host-live-container"><h2>Error: No questions found for this quiz.</h2><button onClick={handleEndQuiz}>Back to Dashboard</button></div>;
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const currentQuestion = questions[currentQuestionIndex] || {
+    question: "Loading question...",
+    options: [],
+    correctAnswer: 1
+  };
 
   // Calculate stats for results
   const optionCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
@@ -319,7 +369,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
           {quizStatus === "answering" && (
             <div className="options-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '2rem 0' }}>
-            {currentQuestion.options.map((opt, idx) => (
+            {currentQuestion.options?.map((opt, idx) => (
                 <div 
                   key={idx} 
                   className="option-card"
@@ -338,7 +388,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
           {quizStatus === "results" && (
             <div className="bar-chart" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', height: '350px', gap: '2rem', borderBottom: '2px solid #333', paddingBottom: '0.5rem', marginTop: '3rem' }}>
-              {currentQuestion.options.map((opt, idx) => {
+              {currentQuestion.options?.map((opt, idx) => {
                 const optionNumber = idx + 1;
                 const isCorrect = currentQuestion.correctAnswer === optionNumber;
                 const votes = optionCounts[optionNumber];
@@ -381,12 +431,29 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
             )}
 
             {quizStatus === "results" && (
-              <button className="primary-btn" onClick={handleShowLeaderboard}>Show Leaderboard</button>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {currentQuestionIndex + 1 < questions.length ? (
+                  <>
+                    <button className="primary-btn" onClick={handleNextQuestion}>
+                      Next Question &rarr;
+                    </button>
+                    <button className="secondary-btn" onClick={handleShowLeaderboard}>
+                      Show Leaderboard
+                    </button>
+                  </>
+                ) : (
+                  <button className="primary-btn" onClick={handleNextQuestion}>
+                    Show Final Leaderboard &rarr;
+                  </button>
+                )}
+              </div>
             )}
 
             {quizStatus === "question_leaderboard" && (
               <button className="primary-btn" onClick={handleNextQuestion}>
-                {currentQuestionIndex + 1 < questions.length ? "Next Question" : "Finish Quiz"}
+                {currentQuestionIndex + 1 < questions.length 
+                  ? `Next Question (${currentQuestionIndex + 2}/${questions.length})` 
+                  : "View Final Podium"}
               </button>
             )}
           </div>

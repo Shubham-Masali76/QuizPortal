@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { doc, onSnapshot, collection, updateDoc } from "firebase/firestore";
-import { ref as rtdbRef, onValue as rtdbOnValue } from "firebase/database";
+import { doc, onSnapshot, collection, updateDoc, getDocs, writeBatch } from "firebase/firestore";
+import { ref as rtdbRef, onValue as rtdbOnValue, remove as rtdbRemove } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import ParticipantAvatarCluster from "../components/ParticipantAvatarCluster";
 import Toast from "../components/Toast";
@@ -149,11 +149,51 @@ export default function HostWaitingRoom({
 
     setIsStarting(true);
     try {
+      const rLimit = readingTimeLimit || 10;
       await updateDoc(doc(db, "quizzes", quizId), {
         status: "live",
-        readingTimeLimit: readingTimeLimit || 10,
+        currentQuestionIndex: 0,
+        questionStatus: "reading",
+        phaseEndTime: Date.now() + (rLimit * 1000),
+        readingTimeLimit: rLimit,
         answeringTimeLimit: answeringTimeLimit || 20,
       });
+
+      // Reset all participants in Firestore for a clean game
+      const pSnap = await getDocs(collection(db, "quizzes", quizId, "participants"));
+      if (!pSnap.empty) {
+        const chunkedBatches = [];
+        let currentBatch = writeBatch(db);
+        let count = 0;
+        pSnap.docs.forEach(pDoc => {
+          if (count >= 490) {
+            chunkedBatches.push(currentBatch);
+            currentBatch = writeBatch(db);
+            count = 0;
+          }
+          currentBatch.update(pDoc.ref, {
+            score: 0,
+            rank: 1,
+            lastPointsEarned: 0,
+            correctAnswersCount: 0,
+            totalResponseTimeMs: 0,
+            lastResponseTimeMs: 0,
+          });
+          count++;
+        });
+        if (count > 0) chunkedBatches.push(currentBatch);
+        for (const b of chunkedBatches) {
+          await b.commit();
+        }
+      }
+
+      // Clear responses in RTDB
+      try {
+        await rtdbRemove(rtdbRef(rtdb, `responses/${quizId}`));
+      } catch (e) {
+        console.warn("Could not clear RTDB responses", e);
+      }
+
       if (setQuizStatus) {
         setQuizStatus("live");
       }

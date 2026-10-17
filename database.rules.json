@@ -21,6 +21,7 @@
     "responses": {
       "$quizId": {
         ".read": true,
+        ".write": "!newData.exists()",
         "$questionIndex": {
           "$participantId": {
             ".write": "!data.exists()",

@@ -232,6 +232,8 @@ function App() {
       await updateDoc(doc(db, "quizzes", quizId), {
         quizCode: codeToUse,
         status: "waiting",
+        currentQuestionIndex: 0,
+        questionStatus: "reading",
       });
 
       setQuizCode(codeToUse);
@@ -297,15 +299,24 @@ function App() {
         const opt4 = getVal(["option4", "opt4", "d", "4"]);
         let correct = getVal(["correctanswer", "correct", "answer", "ans"]);
 
-        if (typeof correct === "string") {
-          correct = correct.trim().toLowerCase();
-          if (correct === "a" || correct === String(opt1).trim().toLowerCase()) correct = "1";
-          else if (correct === "b" || correct === String(opt2).trim().toLowerCase()) correct = "2";
-          else if (correct === "c" || correct === String(opt3).trim().toLowerCase()) correct = "3";
-          else if (correct === "d" || correct === String(opt4).trim().toLowerCase()) correct = "4";
+        if (correct !== undefined && correct !== null && correct !== "") {
+          const cStr = String(correct).trim().toLowerCase();
+          const cleanStr = cStr.replace(/^(option|opt)\s*/, "").replace(/[.)\]]/g, "").trim();
+
+          if (cleanStr === "1" || cleanStr === "a" || cStr === String(opt1).trim().toLowerCase()) {
+            correct = 1;
+          } else if (cleanStr === "2" || cleanStr === "b" || cStr === String(opt2).trim().toLowerCase()) {
+            correct = 2;
+          } else if (cleanStr === "3" || cleanStr === "c" || cStr === String(opt3).trim().toLowerCase()) {
+            correct = 3;
+          } else if (cleanStr === "4" || cleanStr === "d" || cStr === String(opt4).trim().toLowerCase()) {
+            correct = 4;
+          } else {
+            correct = Number(correct);
+          }
         }
 
-        if (questionText && opt1 && opt2 && opt3 && opt4 && correct) {
+        if (questionText && opt1 && opt2 && opt3 && opt4 && correct && !isNaN(correct)) {
           const questionData = {
             question: String(questionText),
             options: [String(opt1), String(opt2), String(opt3), String(opt4)],

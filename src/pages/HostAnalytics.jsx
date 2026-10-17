@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { ref as rtdbRef, remove as rtdbRemove } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import { sortParticipants } from "../utils/helpers";
@@ -65,19 +65,29 @@ export default function HostAnalytics({ quizId, setPage }) {
       a.click();
       URL.revokeObjectURL(url);
 
-      // 2. Delete Participants from Firestore
+      // 2. Delete Participants from Firestore (batched for performance)
       const pSnap = await getDocs(collection(db, "quizzes", quizId, "participants"));
-      for (const pDoc of pSnap.docs) {
-        await deleteDoc(doc(db, "quizzes", quizId, "participants", pDoc.id));
+      if (!pSnap.empty) {
+        const batch = writeBatch(db);
+        pSnap.docs.forEach(pDoc => {
+          batch.delete(pDoc.ref);
+        });
+        await batch.commit();
       }
 
-      // 3. Delete Responses from RTDB
-      await rtdbRemove(rtdbRef(rtdb, `responses/${quizId}`));
+      // 3. Delete Responses from RTDB (safely caught in case of permission/network issue)
+      try {
+        await rtdbRemove(rtdbRef(rtdb, `responses/${quizId}`));
+      } catch (rtdbErr) {
+        console.warn("Could not clear RTDB responses:", rtdbErr);
+      }
 
       // 4. Reset Quiz State to draft
       await updateDoc(doc(db, "quizzes", quizId), {
         status: "draft",
-        currentQuestionIndex: 0
+        questionStatus: "closed",
+        currentQuestionIndex: 0,
+        phaseEndTime: null
       });
 
       alert("Quiz exported and reset successfully! You can now reuse this quiz.");
