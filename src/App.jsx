@@ -102,7 +102,7 @@ function App() {
 
   useEffect(() => {
     const startTime = Date.now();
-    const MIN_LOADING_TIME = 900; // smooth minimum window so the cyber loader displays nicely
+    const MIN_LOADING_TIME = 1000; // smooth minimum window so the cyber loader displays nicely
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -270,7 +270,7 @@ function App() {
 
     setIsUploading(true);
     const fileExtension = file.name.split('.').pop().toLowerCase();
-    
+
     try {
       let rawQuestions = [];
       if (fileExtension === "json") {
@@ -295,10 +295,10 @@ function App() {
       let addedCount = 0;
       for (const q of rawQuestions) {
         const getVal = (keys) => {
-           for (const k of Object.keys(q)) {
-             if (keys.includes(k.toLowerCase().replace(/ /g, ''))) return q[k];
-           }
-           return "";
+          for (const k of Object.keys(q)) {
+            if (keys.includes(k.toLowerCase().replace(/ /g, ''))) return q[k];
+          }
+          return "";
         };
 
         const questionText = getVal(["question", "q", "title"]);
@@ -847,25 +847,25 @@ function App() {
 
                       <div className="quiz-item-footer" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span className="edit-text">Click to edit →</span>
-                        <button 
-                          className="delete-question-btn" 
+                        <button
+                          className="delete-question-btn"
                           style={{ padding: '0.2rem 0.8rem', fontSize: '0.9rem', marginLeft: 'auto' }}
                           onClick={(e) => handleDeleteQuiz(e, quiz)}
                         >
                           Delete
                         </button>
-                        { (quiz.status === "completed" || quiz.status === "finished") && (
-                           <button 
-                             className="secondary-btn" 
-                             style={{ padding: '0.2rem 0.8rem', fontSize: '0.9rem' }}
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               setQuizId(quiz.id);
-                               setPage("analytics");
-                             }}
-                           >
-                             Analytics
-                           </button>
+                        {(quiz.status === "completed" || quiz.status === "finished") && (
+                          <button
+                            className="secondary-btn"
+                            style={{ padding: '0.2rem 0.8rem', fontSize: '0.9rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setQuizId(quiz.id);
+                              setPage("analytics");
+                            }}
+                          >
+                            Analytics
+                          </button>
                         )}
                         <span
                           className={`quiz-status ${quiz.status || "draft"}`}
@@ -1012,11 +1012,10 @@ function App() {
                     {question.options.map((option, optionIndex) => (
                       <div
                         key={optionIndex}
-                        className={`question-option ${
-                          optionIndex + 1 === question.correctAnswer
+                        className={`question-option ${optionIndex + 1 === question.correctAnswer
                             ? "correct-option"
                             : ""
-                        }`}
+                          }`}
                       >
                         <span>{optionIndex + 1}.</span>
                         {option}
