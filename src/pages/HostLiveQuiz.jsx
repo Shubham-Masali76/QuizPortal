@@ -260,6 +260,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
   useEffect(() => {
     if (timeLeft === 0 && !isTransitioning.current) {
       if (quizStatus === "answering") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         handleShowResults();
       }
     }

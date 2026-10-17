@@ -100,6 +100,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
 
   // Reset selection on question change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedOption(null);
     setHasSubmitted(false);
   }, [quizState.currentQuestionIndex]);

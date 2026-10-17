@@ -75,7 +75,6 @@ function App() {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [showLoadingPortal, setShowLoadingPortal] = useState(true);
   const [isLoaderExiting, setIsLoaderExiting] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -122,7 +121,6 @@ function App() {
         setIsLoaderExiting(true);
         setTimeout(() => {
           setShowLoadingPortal(false);
-          setAuthLoading(false);
         }, 650);
       }, remaining);
     });

@@ -9,31 +9,40 @@ export default function NeonLoadingScreen({
   isExiting = false,
   overlay = true
 }) {
-  const [currentStatus, setCurrentStatus] = useState(status);
+  const [phaseIndex, setPhaseIndex] = useState(0);
 
   useEffect(() => {
-    if (status === "INITIALIZING PORTAL SESSION...") {
-      const t1 = setTimeout(() => {
-        setCurrentStatus("ESTABLISHING AWS SECURE PROTOCOL...");
-      }, 500);
+    if (status !== "INITIALIZING PORTAL SESSION...") return;
 
-      const t2 = setTimeout(() => {
-        setCurrentStatus("SYNCHRONIZING PORTAL ASSETS...");
-      }, 1100);
+    const t1 = setTimeout(() => {
+      setPhaseIndex(1);
+    }, 500);
 
-      const t3 = setTimeout(() => {
-        setCurrentStatus("READY • LAUNCHING ARENA...");
-      }, 1650);
+    const t2 = setTimeout(() => {
+      setPhaseIndex(2);
+    }, 1100);
 
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
-    } else {
-      setCurrentStatus(status);
-    }
+    const t3 = setTimeout(() => {
+      setPhaseIndex(3);
+    }, 1650);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
   }, [status]);
+
+  const defaultPhases = [
+    "INITIALIZING PORTAL SESSION...",
+    "ESTABLISHING AWS SECURE PROTOCOL...",
+    "SYNCHRONIZING PORTAL ASSETS...",
+    "READY • LAUNCHING ARENA..."
+  ];
+
+  const currentStatus = status === "INITIALIZING PORTAL SESSION..."
+    ? defaultPhases[phaseIndex] || status
+    : status;
 
   return (
     <div 
