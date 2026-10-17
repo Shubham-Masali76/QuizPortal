@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { collection, getDocs, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { ref as rtdbRef, remove as rtdbRemove } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
-import { sortParticipants } from "../utils/helpers";
+import { sortParticipants, sortQuestions } from "../utils/helpers";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   PieChart, Pie, Cell, Legend
@@ -25,7 +25,7 @@ export default function HostAnalytics({ quizId, setPage }) {
         // Fetch questions
         const qSnap = await getDocs(collection(db, "quizzes", quizId, "questions"));
         const qList = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setQuestions(qList);
+        setQuestions(sortQuestions(qList));
 
         // No need to fetch responses from Firestore anymore, we can aggregate from participants directly!
       } catch (err) {

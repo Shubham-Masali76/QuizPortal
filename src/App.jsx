@@ -24,6 +24,7 @@ import {
 
 
 import { db, auth } from "./services/firebase";
+import { sortQuestions } from "./utils/helpers";
 
 import "./App.css";
 import DashboardLayout from "./components/DashboardLayout";
@@ -297,6 +298,7 @@ function App() {
       }
 
       let addedCount = 0;
+      const baseOrder = questions.length;
       for (const q of rawQuestions) {
         const getVal = (keys) => {
           for (const k of Object.keys(q)) {
@@ -334,6 +336,8 @@ function App() {
             question: String(questionText),
             options: [String(opt1), String(opt2), String(opt3), String(opt4)],
             correctAnswer: Number(correct),
+            order: baseOrder + addedCount,
+            createdAt: new Date(),
           };
           await addDoc(collection(db, "quizzes", quizId, "questions"), questionData);
           addedCount++;
@@ -378,7 +382,10 @@ function App() {
         // Update existing question
         await updateDoc(
           doc(db, "quizzes", quizId, "questions", editingQuestion.id),
-          questionData,
+          {
+            ...questionData,
+            order: editingQuestion.order !== undefined ? editingQuestion.order : questions.length,
+          },
         );
 
         setMessage("Question updated successfully!");
@@ -392,6 +399,7 @@ function App() {
         // Add new question
         await addDoc(collection(db, "quizzes", quizId, "questions"), {
           ...questionData,
+          order: questions.length,
           createdAt: new Date(),
         });
 
@@ -432,7 +440,7 @@ function App() {
         ...doc.data(),
       }));
 
-      setQuestions(questionList);
+      setQuestions(sortQuestions(questionList));
     } catch (error) {
       console.error("Error fetching questions:", error);
       setMessage("Something went wrong while fetching the questions!");

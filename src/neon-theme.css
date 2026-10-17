@@ -441,6 +441,15 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.neon-option-item:focus,
+.neon-option-item:focus-visible {
+  outline: none !important;
+  box-shadow: none;
 }
 
 .neon-option-left {

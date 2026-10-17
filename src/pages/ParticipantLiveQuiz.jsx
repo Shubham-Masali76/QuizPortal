@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { doc, onSnapshot, collection, getDocs, getDoc } from "firebase/firestore";
 import { ref as rtdbRef, onValue as rtdbOnValue, set as rtdbSet, onDisconnect as rtdbOnDisconnect } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
-import { submitResponseRTDB } from "../utils/helpers";
+import { submitResponseRTDB, sortQuestions } from "../utils/helpers";
 import { 
   CpuIcon, 
   TrophyIcon, 
@@ -68,7 +68,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
 
         const qSnap = await getDocs(collection(db, "quizzes", quizId, "questions"));
         const qList = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setQuestions(qList);
+        setQuestions(sortQuestions(qList));
       } catch (err) {
         console.error("Error fetching quiz questions:", err);
       }
@@ -125,11 +125,14 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
     return () => unsub();
   }, [quizId]);
 
-  // Reset selection on question change
+  // Reset selection on question change and remove focus ring
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedOption(null);
     setHasSubmitted(false);
+    if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
+      document.activeElement.blur();
+    }
   }, [quizState.currentQuestionIndex]);
 
   const handleSelectOption = async (optionIndex) => {
@@ -315,7 +318,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
 
               return (
                 <button
-                  key={idx}
+                  key={`${quizState.currentQuestionIndex}-${idx}`}
                   type="button"
                   className={optionClasses}
                   onClick={() => handleSelectOption(idx)}

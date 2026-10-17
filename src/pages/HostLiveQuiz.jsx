@@ -4,6 +4,7 @@ import { ref as rtdbRef, onValue } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import LeaderboardView from "../components/LeaderboardView";
 import PodiumView from "../components/PodiumView";
+import { sortQuestions } from "../utils/helpers";
 
 const HostLiveQuiz = ({ quizId, setPage }) => {
   const [questions, setQuestions] = useState([]);
@@ -182,9 +183,10 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
         // Fetch questions
         const qSnap = await getDocs(collection(db, "quizzes", quizId, "questions"));
         const qList = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setQuestions(qList);
+        const sortedQuestions = sortQuestions(qList);
+        setQuestions(sortedQuestions);
 
-        if (qList.length === 0) {
+        if (sortedQuestions.length === 0) {
           setQuizStatus("error"); // No questions
           return;
         }

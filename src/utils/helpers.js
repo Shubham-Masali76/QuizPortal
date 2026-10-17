@@ -170,3 +170,34 @@ export const sortParticipants = (a, b) => {
   // 4. Quaternary: Clutch Factor (Last Response Time) (Ascending - lower is better)
   return (a.lastResponseTimeMs || 0) - (b.lastResponseTimeMs || 0);
 };
+
+export const sortQuestions = (list) => {
+  if (!Array.isArray(list)) return [];
+  return [...list].sort((a, b) => {
+    // 1. Explicit order field
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    if (a.order !== undefined) return -1;
+    if (b.order !== undefined) return 1;
+
+    // 2. Creation timestamp
+    if (a.createdAt && b.createdAt) {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt).getTime();
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt).getTime();
+      if (timeA !== timeB) return timeA - timeB;
+    }
+
+    // 3. Fallback: extract leading or embedded question number (e.g. "1 question", "Question 1", "1.")
+    const matchA = (a.question || "").match(/(\d+)/);
+    const matchB = (b.question || "").match(/(\d+)/);
+    if (matchA && matchB) {
+      const numA = parseInt(matchA[1], 10);
+      const numB = parseInt(matchB[1], 10);
+      if (numA !== numB) return numA - numB;
+    }
+
+    // 4. Stable fallback by id
+    return String(a.id || "").localeCompare(String(b.id || ""));
+  });
+};
