@@ -35,6 +35,7 @@ import ParticipantLiveQuizzes from "./pages/ParticipantLiveQuizzes";
 import HostWaitingRoom from "./pages/HostWaitingRoom";
 import HostLiveQuiz from "./pages/HostLiveQuiz";
 import HostAnalytics from "./pages/HostAnalytics";
+import NeonLoadingScreen from "./components/NeonLoadingScreen";
 const generateQuizCode = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
@@ -529,11 +530,7 @@ function App() {
   };
 
   if (authLoading) {
-    return (
-      <div className="auth-loading">
-        <h2>Loading QuizPortal...</h2>
-      </div>
-    );
+    return <NeonLoadingScreen />;
   }
 
   if (!selectedRole) {
