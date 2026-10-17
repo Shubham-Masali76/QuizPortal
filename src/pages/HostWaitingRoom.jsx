@@ -158,26 +158,32 @@ export default function HostWaitingRoom({
         answeringTimeLimit: timeLimit,
       });
 
-      // Reset all participants in Firestore for a clean game
+      // Reset active participants in Firestore for a clean game, and purge stale/offline participants
       const pSnap = await getDocs(collection(db, "quizzes", quizId, "participants"));
       if (!pSnap.empty) {
+        const activeIds = new Set(activeParticipants.map(p => p.id));
         const chunkedBatches = [];
         let currentBatch = writeBatch(db);
         let count = 0;
         pSnap.docs.forEach(pDoc => {
-          if (count >= 490) {
+          if (count >= 480) {
             chunkedBatches.push(currentBatch);
             currentBatch = writeBatch(db);
             count = 0;
           }
-          currentBatch.update(pDoc.ref, {
-            score: 0,
-            rank: 1,
-            lastPointsEarned: 0,
-            correctAnswersCount: 0,
-            totalResponseTimeMs: 0,
-            lastResponseTimeMs: 0,
-          });
+          if (activeIds.has(pDoc.id)) {
+            currentBatch.update(pDoc.ref, {
+              score: 0,
+              rank: 1,
+              lastPointsEarned: 0,
+              correctAnswersCount: 0,
+              totalResponseTimeMs: 0,
+              lastResponseTimeMs: 0,
+            });
+          } else {
+            // Delete ghost/stale participant who is not in the waiting room
+            currentBatch.delete(pDoc.ref);
+          }
           count++;
         });
         if (count > 0) chunkedBatches.push(currentBatch);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot, collection, getDocs, getDoc } from "firebase/firestore";
-import { db } from "../services/firebase";
+import { ref as rtdbRef, onValue as rtdbOnValue, set as rtdbSet, onDisconnect as rtdbOnDisconnect } from "firebase/database";
+import { db, rtdb } from "../services/firebase";
 import { submitResponseRTDB } from "../utils/helpers";
 import { 
   CpuIcon, 
@@ -25,6 +26,32 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [participantData, setParticipantData] = useState(null);
+
+  // Maintain RTDB presence in live quiz
+  useEffect(() => {
+    if (!quizId || !participantId) return;
+
+    const presenceRef = rtdbRef(rtdb, `presence/${quizId}/${participantId}`);
+    const connectedRef = rtdbRef(rtdb, ".info/connected");
+
+    const unsubConnected = rtdbOnValue(connectedRef, async (snap) => {
+      if (snap.val() === true) {
+        try {
+          await rtdbOnDisconnect(presenceRef).remove();
+          await rtdbSet(presenceRef, {
+            state: "online",
+            joinedAt: Date.now(),
+          });
+        } catch (err) {
+          console.error("Error maintaining RTDB presence during quiz:", err);
+        }
+      }
+    });
+
+    return () => {
+      unsubConnected();
+    };
+  }, [quizId, participantId]);
 
   // Fetch quiz meta and questions
   useEffect(() => {

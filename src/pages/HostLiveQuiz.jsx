@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { doc, getDoc, updateDoc, collection, getDocs, onSnapshot, query, writeBatch } from "firebase/firestore";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { doc, getDoc, updateDoc, collection, getDocs, onSnapshot, query, writeBatch, deleteDoc } from "firebase/firestore";
 import { ref as rtdbRef, onValue } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import LeaderboardView from "../components/LeaderboardView";
@@ -12,9 +12,22 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [responses, setResponses] = useState([]);
   const [participants, setParticipants] = useState([]);
+  const [presenceMap, setPresenceMap] = useState(null);
   const [quizData, setQuizData] = useState(null);
   const isTransitioning = useRef(false);
   const currentPhaseEndTime = useRef(null);
+
+  // Active participants: filter out ghost records from old sessions who are not online in RTDB
+  const activeParticipants = useMemo(() => {
+    if (!presenceMap) return participants;
+    const online = participants.filter((p) => {
+      const pres = presenceMap[p.id];
+      const isOnline = pres === true || pres?.state === "online" || pres?.presence === "online";
+      const hasActivity = (p.score || 0) > 0 || responses.some(r => r.participantId === p.id);
+      return isOnline || hasActivity;
+    });
+    return online.length > 0 ? online : participants;
+  }, [participants, presenceMap, responses]);
 
   const updateQuizState = useCallback(async (index, status, timeLimit = 0) => {
     const numIndex = Number(index);
@@ -50,7 +63,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
         
         const updates = {};
         // Calculate scores first
-        participants.forEach(p => {
+        activeParticipants.forEach(p => {
           updates[p.id] = { ...p, lastPointsEarned: 0 };
         });
 
@@ -138,7 +151,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     } finally {
       isTransitioning.current = false;
     }
-  }, [quizId, currentQuestionIndex, updateQuizState, responses, questions, quizData, participants]);
+  }, [quizId, currentQuestionIndex, updateQuizState, responses, questions, quizData, activeParticipants]);
 
   const handleShowLeaderboard = async () => {
     if (isTransitioning.current) return;
@@ -218,6 +231,29 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     });
     return () => unsub();
   }, [quizId]);
+
+  // Listen to RTDB presence for active participants in real-time
+  useEffect(() => {
+    if (!quizId) return;
+    const presenceRef = rtdbRef(rtdb, `presence/${quizId}`);
+    const unsub = onValue(presenceRef, (snapshot) => {
+      setPresenceMap(snapshot.val() || {});
+    });
+    return () => unsub();
+  }, [quizId]);
+
+  // Proactively cleanup stale ghost participants from Firestore if they are offline with 0 points
+  useEffect(() => {
+    if (!presenceMap || currentQuestionIndex !== 0) return;
+    participants.forEach((p) => {
+      const pres = presenceMap[p.id];
+      const isOnline = pres === true || pres?.state === "online" || pres?.presence === "online";
+      const hasActivity = (p.score || 0) > 0 || responses.some(r => r.participantId === p.id);
+      if (!isOnline && !hasActivity) {
+        deleteDoc(doc(db, "quizzes", quizId, "participants", p.id)).catch(console.warn);
+      }
+    });
+  }, [presenceMap, participants, currentQuestionIndex, quizId, responses]);
 
   // Listen to responses for the current question via RTDB
   useEffect(() => {
@@ -319,7 +355,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
       {quizStatus === "leaderboard" ? (
         <div className="leaderboard-view">
           <h2 style={{ fontSize: '3rem', margin: '2rem 0', color: '#ffca3a', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>Final Podium</h2>
-          <PodiumView participants={participants} />
+          <PodiumView participants={activeParticipants} />
           <button className="primary-btn" onClick={handleEndQuiz} style={{ marginTop: '3rem', padding: '1rem 3rem', fontSize: '1.5rem' }}>Finish Quiz</button>
         </div>
       ) : (
@@ -384,47 +420,38 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
           )}
 
           {quizStatus === "question_leaderboard" && (
-            <div className="card" style={{ marginTop: '2rem', minHeight: '600px' }}>
-              <h3>Current Leaderboard</h3>
-              <LeaderboardView participants={participants} />
+            <div className="card" style={{ marginTop: '2rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
+              <h3 style={{ marginBottom: '1rem' }}>Current Leaderboard</h3>
+              <LeaderboardView participants={activeParticipants} />
             </div>
           )}
 
-          <div className="controls" style={{ marginTop: '3rem' }}>
+          <div className="controls" style={{ marginTop: '2rem' }}>
             {quizStatus === "answering" && (
               <button className="secondary-btn" onClick={handleShowResults}>Skip Timer & Show Results</button>
             )}
 
             {quizStatus === "results" && (
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                {currentQuestionIndex + 1 < questions.length ? (
-                  <>
-                    <button className="primary-btn" onClick={handleNextQuestion}>
-                      Next Question &rarr;
-                    </button>
-                    <button className="secondary-btn" onClick={handleShowLeaderboard}>
-                      Show Leaderboard
-                    </button>
-                  </>
-                ) : (
-                  <button className="primary-btn" onClick={handleNextQuestion}>
-                    Show Final Leaderboard &rarr;
-                  </button>
-                )}
+                <button className="primary-btn" onClick={handleShowLeaderboard} style={{ padding: '0.8rem 2.2rem', fontSize: '1.1rem' }}>
+                  {currentQuestionIndex + 1 < questions.length 
+                    ? "Show Leaderboard →" 
+                    : "Show Final Leaderboard →"}
+                </button>
               </div>
             )}
 
             {quizStatus === "question_leaderboard" && (
-              <button className="primary-btn" onClick={handleNextQuestion}>
+              <button className="primary-btn" onClick={handleNextQuestion} style={{ padding: '0.8rem 2.2rem', fontSize: '1.1rem' }}>
                 {currentQuestionIndex + 1 < questions.length 
-                  ? `Next Question (${currentQuestionIndex + 2}/${questions.length})` 
-                  : "View Final Podium"}
+                  ? `Next Question (${currentQuestionIndex + 2}/${questions.length}) →` 
+                  : "View Final Podium →"}
               </button>
             )}
           </div>
           
           <div style={{ marginTop: '2rem', color: '#666' }}>
-            Responses: {responses.length} / {participants.length}
+            Responses: {responses.length} / {activeParticipants.length}
           </div>
         </div>
       )}
