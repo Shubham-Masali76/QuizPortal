@@ -102,7 +102,7 @@ function App() {
 
   useEffect(() => {
     const startTime = Date.now();
-    const MIN_LOADING_TIME = 1000; // smooth minimum window so the cyber loader displays nicely
+    const MIN_LOADING_TIME = 2000; // smooth minimum window so the cyber loader displays nicely
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
