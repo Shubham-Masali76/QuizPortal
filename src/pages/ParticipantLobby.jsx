@@ -12,6 +12,8 @@ import LobbyReactionsOverlay from "../components/LobbyReactionsOverlay";
 import ParticipantReactionBar from "../components/ParticipantReactionBar";
 import { generateDynamicAvatar } from "../utils/helpers";
 import ParticipantLiveQuiz from "./ParticipantLiveQuiz";
+import { CpuIcon } from "../components/NeonIcons";
+import NeonBackground from "../components/NeonBackground";
 
 export default function ParticipantLobby({
   quizId,
@@ -265,28 +267,37 @@ export default function ParticipantLobby({
       <ParticipantLiveQuiz 
         quizId={quizId} 
         participantId={participantId} 
+        quizTitle={quizData.title}
         onLeave={handleLeaveLobby} 
       />
     );
   }
 
   return (
-    <div className="participant-lobby-page">
+    <div className="neon-theme-wrapper neon-centered-wrapper">
+      <NeonBackground />
       <LobbyReactionsOverlay quizId={quizId} />
-      <header className="participant-lobby-header">
-        <div className="participant-logo">QuizPortal</div>
-        <button
-          type="button"
-          className="secondary-btn lobby-top-leave-btn"
-          onClick={handleLeaveLobby}
-          disabled={isLeaving}
-        >
-          {isLeaving ? "Leaving..." : "← Leave Quiz"}
-        </button>
-      </header>
 
-      <main className="participant-lobby-main">
-        <div className="participant-lobby-card">
+      <div className="neon-mobile-frame neon-centered-frame">
+        <header className="neon-header-bar">
+          <div className="neon-brand-badge">
+            <CpuIcon size={26} />
+            <div className="neon-brand-text">
+              <span className="neon-brand-org">AWS STUDENT BUILDER GROUP</span>
+              <span className="neon-brand-sub">AT NKOCET</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="neon-pill-btn"
+            onClick={handleLeaveLobby}
+            disabled={isLeaving}
+          >
+            {isLeaving ? "Leaving..." : "← Leave Quiz"}
+          </button>
+        </header>
+
+        <div className="neon-card participant-lobby-card">
           <div className="lobby-status-badge-wrap">
             <span className={`quiz-status ${quizData.status}`}>
               {quizData.status === "waiting"
@@ -365,7 +376,7 @@ export default function ParticipantLobby({
             </button>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

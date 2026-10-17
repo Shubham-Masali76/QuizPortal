@@ -233,7 +233,7 @@ function App() {
         quizCode: codeToUse,
         status: "waiting",
         currentQuestionIndex: 0,
-        questionStatus: "reading",
+        questionStatus: "answering",
       });
 
       setQuizCode(codeToUse);

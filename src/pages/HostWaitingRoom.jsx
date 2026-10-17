@@ -26,8 +26,7 @@ export default function HostWaitingRoom({
   const [isStarting, setIsStarting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [readingTimeLimit, setReadingTimeLimit] = useState(10);
-  const [answeringTimeLimit, setAnsweringTimeLimit] = useState(20);
+  const [questionTimeLimit, setQuestionTimeLimit] = useState(20);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -149,14 +148,14 @@ export default function HostWaitingRoom({
 
     setIsStarting(true);
     try {
-      const rLimit = readingTimeLimit || 10;
+      const timeLimit = questionTimeLimit || 20;
       await updateDoc(doc(db, "quizzes", quizId), {
         status: "live",
         currentQuestionIndex: 0,
-        questionStatus: "reading",
-        phaseEndTime: Date.now() + (rLimit * 1000),
-        readingTimeLimit: rLimit,
-        answeringTimeLimit: answeringTimeLimit || 20,
+        questionStatus: "answering",
+        phaseEndTime: Date.now() + (timeLimit * 1000),
+        questionTimeLimit: timeLimit,
+        answeringTimeLimit: timeLimit,
       });
 
       // Reset all participants in Firestore for a clean game
@@ -264,23 +263,13 @@ export default function HostWaitingRoom({
         <h3>Quiz Settings</h3>
         <div className="settings-grid">
           <div className="setting-group">
-            <label>Reading Time (seconds):</label>
+            <label>Time per Question (seconds):</label>
             <input 
               type="number" 
               min="5" 
-              max="120"
-              value={readingTimeLimit} 
-              onChange={(e) => setReadingTimeLimit(Number(e.target.value))}
-            />
-          </div>
-          <div className="setting-group">
-            <label>Answering Time (seconds):</label>
-            <input 
-              type="number" 
-              min="10" 
               max="300"
-              value={answeringTimeLimit} 
-              onChange={(e) => setAnsweringTimeLimit(Number(e.target.value))}
+              value={questionTimeLimit} 
+              onChange={(e) => setQuestionTimeLimit(Number(e.target.value))}
             />
           </div>
         </div>

@@ -8,7 +8,7 @@ import PodiumView from "../components/PodiumView";
 const HostLiveQuiz = ({ quizId, setPage }) => {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [quizStatus, setQuizStatus] = useState("loading"); // loading, reading, answering, results, question_leaderboard, leaderboard
+  const [quizStatus, setQuizStatus] = useState("loading"); // loading, answering, results, question_leaderboard, leaderboard
   const [timeLeft, setTimeLeft] = useState(0);
   const [responses, setResponses] = useState([]);
   const [participants, setParticipants] = useState([]);
@@ -23,7 +23,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     
     const updateData = {
       currentQuestionIndex: numIndex,
-      questionStatus: status, // "reading", "answering", "results", "question_leaderboard", "closed"
+      questionStatus: status, // "answering", "results", "question_leaderboard", "closed"
     };
 
     if (timeLimit > 0) {
@@ -54,7 +54,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
           updates[p.id] = { ...p, lastPointsEarned: 0 };
         });
 
-        const maxTime = quizData?.answeringTimeLimit || 20;
+        const maxTime = quizData?.questionTimeLimit || quizData?.answeringTimeLimit || 20;
         const phaseEnd = currentPhaseEndTime.current || quizData?.phaseEndTime || Date.now();
 
         responses.forEach(resp => {
@@ -176,32 +176,30 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
           return;
         }
 
-        const rLimit = qData.readingTimeLimit || 10;
-        const aLimit = qData.answeringTimeLimit || 20;
+        const qLimit = qData.questionTimeLimit || qData.answeringTimeLimit || 20;
 
         // If the quiz is starting fresh or has uninitialized state:
         const isFresh = !qData.questionStatus ||
                         qData.questionStatus === "closed" ||
+                        qData.questionStatus === "reading" ||
                         qData.currentQuestionIndex === undefined ||
                         qData.currentQuestionIndex === null;
 
         if (isFresh) {
-          setTimeLeft(rLimit);
-          await updateQuizState(0, "reading", rLimit);
+          setTimeLeft(qLimit);
+          await updateQuizState(0, "answering", qLimit);
         } else {
           // Resume quiz state
           const activeIndex = Number(qData.currentQuestionIndex) || 0;
           setCurrentQuestionIndex(activeIndex);
-          const currentStatus = qData.questionStatus || "reading";
+          const currentStatus = qData.questionStatus === "reading" ? "answering" : (qData.questionStatus || "answering");
           setQuizStatus(currentStatus);
 
           if (qData.phaseEndTime) {
             const remaining = Math.max(0, Math.round((qData.phaseEndTime - Date.now()) / 1000));
             setTimeLeft(remaining);
-          } else if (currentStatus === "reading") {
-            setTimeLeft(rLimit);
           } else if (currentStatus === "answering") {
-            setTimeLeft(aLimit);
+            setTimeLeft(qLimit);
           }
         }
       } catch (err) {
@@ -243,25 +241,9 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     return () => unsubscribe();
   }, [quizId, currentQuestionIndex, questions.length]);
 
-  // Timer logic
-  const handleStartAnswering = useCallback(async () => {
-    if (isTransitioning.current) return;
-    isTransitioning.current = true;
-    
-    try {
-      const aLimit = quizData?.answeringTimeLimit || 20;
-      setTimeLeft(aLimit);
-      await updateQuizState(currentQuestionIndex, "answering", aLimit);
-    } catch (err) {
-      console.error("Error starting answering phase:", err);
-    } finally {
-      isTransitioning.current = false;
-    }
-  }, [quizData, currentQuestionIndex, updateQuizState]);
-
   useEffect(() => {
     let timer;
-    if (quizStatus === "reading" || quizStatus === "answering") {
+    if (quizStatus === "answering") {
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -277,9 +259,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
   useEffect(() => {
     if (timeLeft === 0 && !isTransitioning.current) {
-      if (quizStatus === "reading") {
-        handleStartAnswering();
-      } else if (quizStatus === "answering") {
+      if (quizStatus === "answering") {
         handleShowResults();
       }
     }
@@ -293,10 +273,10 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     try {
       const nextIndex = Number(currentQuestionIndex) + 1;
       if (nextIndex < questions.length) {
-        const rLimit = quizData?.readingTimeLimit || 10;
-        setTimeLeft(rLimit);
+        const qLimit = quizData?.questionTimeLimit || quizData?.answeringTimeLimit || 20;
+        setTimeLeft(qLimit);
         setResponses([]);
-        await updateQuizState(nextIndex, "reading", rLimit);
+        await updateQuizState(nextIndex, "answering", qLimit);
       } else {
         setQuizStatus("leaderboard");
         await updateDoc(doc(db, "quizzes", quizId), { status: "completed", questionStatus: "closed" });
@@ -349,21 +329,9 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
           
           <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>{currentQuestion.question}</h1>
 
-          {quizStatus === "reading" && (
-            <div className="timer" style={{ fontSize: '3rem', fontWeight: 'bold', color: '#555' }}>
-              Reading Time: {timeLeft}s
-            </div>
-          )}
-
           {quizStatus === "answering" && (
             <div className="timer" style={{ fontSize: '4rem', fontWeight: 'bold', color: timeLeft <= 5 ? 'red' : '#333' }}>
               {timeLeft}
-            </div>
-          )}
-
-          {quizStatus === "reading" && (
-            <div style={{ margin: '3rem 0', fontSize: '1.2rem', color: '#666', fontStyle: 'italic' }}>
-              Options will appear when answering time starts...
             </div>
           )}
 
@@ -422,10 +390,6 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
           )}
 
           <div className="controls" style={{ marginTop: '3rem' }}>
-            {quizStatus === "reading" && (
-              <button className="primary-btn" onClick={handleStartAnswering}>Skip Reading Time</button>
-            )}
-            
             {quizStatus === "answering" && (
               <button className="secondary-btn" onClick={handleShowResults}>Skip Timer & Show Results</button>
             )}

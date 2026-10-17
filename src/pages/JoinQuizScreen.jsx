@@ -4,6 +4,13 @@ import { ref as rtdbRef, get as rtdbGet } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import Toast from "../components/Toast";
 import { generateDynamicAvatar } from "../utils/helpers";
+import { 
+  CpuIcon, 
+  TrophyIcon, 
+  KeyIcon, 
+  UserIcon 
+} from "../components/NeonIcons";
+import NeonBackground from "../components/NeonBackground";
 
 export default function JoinQuizScreen({ selectedQuiz, onBack, onJoined }) {
   const [code, setCode] = useState("");
@@ -151,62 +158,103 @@ export default function JoinQuizScreen({ selectedQuiz, onBack, onJoined }) {
   };
 
   return (
-    <div className="join-quiz-page">
-      <div className="join-quiz-card">
-        <div className="role-logo">QuizPortal</div>
-        <h1>Join Quiz</h1>
-        <p className="join-quiz-subtitle">
-          Enter the code and your name to join this challenge
-        </p>
-
-        <div className="join-quiz-info-box">
-          <h3>{selectedQuiz.title}</h3>
-          {selectedQuiz.description && <p>{selectedQuiz.description}</p>}
-        </div>
-
-        <form onSubmit={handleJoinSubmit}>
-          <div className="join-quiz-field">
-            <label>Quiz Code</label>
-            <input
-              type="text"
-              placeholder="e.g. R19UNG"
-              value={code}
-              maxLength={6}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              className="quiz-code-input"
-              disabled={isVerifying}
-            />
+    <div className="neon-theme-wrapper neon-centered-wrapper">
+      <NeonBackground />
+      <div className="neon-mobile-frame neon-centered-frame">
+        {/* Header Bar matching Image 3 */}
+        <header className="neon-header-bar">
+          <div className="neon-brand-badge">
+            <CpuIcon size={26} />
+            <div className="neon-brand-text">
+              <span className="neon-brand-org">AWS STUDENT BUILDER GROUP</span>
+              <span className="neon-brand-sub">AT NKOCET</span>
+            </div>
           </div>
-
-          <div className="join-quiz-field">
-            <label>Your Name</label>
-            <input
-              type="text"
-              placeholder="Enter your name"
-              value={name}
-              maxLength={30}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isVerifying}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="primary-btn join-quiz-submit-btn"
-            disabled={isVerifying}
-          >
-            {isVerifying ? "Verifying..." : "Join Quiz →"}
-          </button>
-
           <button
             type="button"
-            className="join-quiz-back-btn"
+            className="neon-pill-btn"
             onClick={onBack}
             disabled={isVerifying}
           >
             ← Back to Live Quizzes
           </button>
-        </form>
+        </header>
+
+        {/* Join Quiz Neon Card (Image 3) */}
+        <div className="neon-card" style={{ padding: "1.75rem 1.25rem" }}>
+          <h1 className="neon-join-title">
+            Join <span>Quiz</span>
+          </h1>
+          <p className="neon-join-subtitle">
+            Enter the code and your name to join this challenge
+          </p>
+
+          {/* Selected Quiz Preview Box */}
+          <div className="neon-selected-quiz-preview">
+            <div className="neon-quiz-item-icon-box" style={{ width: "38px", height: "38px" }}>
+              <TrophyIcon size={20} color="#c084fc" />
+            </div>
+            <div style={{ flex: 1, overflow: "hidden" }}>
+              <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#ffffff" }}>
+                {selectedQuiz.title}
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#a1a1aa", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                {selectedQuiz.description || "AWS Knowledge Quiz"}
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleJoinSubmit}>
+            {/* Field 1: Quiz Code */}
+            <div className="neon-form-group">
+              <label className="neon-form-label">Quiz Code</label>
+              <div className="neon-input-wrapper">
+                <span className="neon-input-icon">
+                  <KeyIcon size={18} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="E.g. R19UNG"
+                  value={code}
+                  maxLength={6}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  className="neon-input"
+                  disabled={isVerifying}
+                  style={{ textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}
+                />
+              </div>
+            </div>
+
+            {/* Field 2: Your Name */}
+            <div className="neon-form-group">
+              <label className="neon-form-label">Your Name</label>
+              <div className="neon-input-wrapper">
+                <span className="neon-input-icon">
+                  <UserIcon size={18} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Enter your name"
+                  value={name}
+                  maxLength={30}
+                  onChange={(e) => setName(e.target.value)}
+                  className="neon-input"
+                  disabled={isVerifying}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginTop: "1.5rem" }}>
+              <button
+                type="submit"
+                className="neon-btn-primary"
+                disabled={isVerifying}
+              >
+                {isVerifying ? "Verifying Code..." : "Join Quiz →"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <Toast message={message} />

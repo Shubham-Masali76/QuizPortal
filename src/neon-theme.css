@@ -1,0 +1,1476 @@
+/* =========================================================
+   NEON THEME STYLES - QUIZPORTAL (DARK NEON PURPLE)
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.neon-theme-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #07040f;
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(124, 58, 237, 0.22) 0%, transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(147, 51, 234, 0.22) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(88, 28, 135, 0.12) 0%, transparent 60%);
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 2.75rem 1.5rem 4rem;
+}
+
+.neon-mobile-frame {
+  width: 100%;
+  max-width: 680px;
+  min-height: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 10;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .neon-mobile-frame {
+    max-width: 760px;
+  }
+}
+
+/* =========================================================
+   LIGHT DESIGN STRUCTURES & AMBIENT BACKGROUND
+   ========================================================= */
+
+.neon-bg-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Subtle Fading Cyber Tech Grid */
+.neon-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(168, 85, 247, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(168, 85, 247, 0.06) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 50%, #000 25%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 50%, #000 25%, transparent 80%);
+  opacity: 0.8;
+}
+
+/* Ambient Glowing Light Orbs */
+.neon-bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  opacity: 0.65;
+  will-change: transform;
+}
+
+.neon-orb-1 {
+  width: 520px;
+  height: 520px;
+  top: -120px;
+  left: 2%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.28) 0%, rgba(88, 28, 135, 0.1) 50%, transparent 70%);
+  animation: floatOrbOne 14s ease-in-out infinite alternate;
+}
+
+.neon-orb-2 {
+  width: 480px;
+  height: 480px;
+  bottom: -100px;
+  right: 2%;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.22) 0%, rgba(147, 51, 234, 0.08) 50%, transparent 70%);
+  animation: floatOrbTwo 18s ease-in-out infinite alternate;
+}
+
+.neon-orb-3 {
+  width: 380px;
+  height: 380px;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.18) 0%, transparent 65%);
+  filter: blur(65px);
+}
+
+@keyframes floatOrbOne {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, 25px) scale(1.08); }
+  100% { transform: translate(-20px, 35px) scale(0.95); }
+}
+
+@keyframes floatOrbTwo {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-35px, -30px) scale(1.05); }
+  100% { transform: translate(25px, -15px) scale(0.92); }
+}
+
+/* Delicate Vector Geometric Light Structures */
+.neon-bg-svg-structures {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Top Header Bar */
+.neon-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.25rem;
+  width: 100%;
+  z-index: 10;
+}
+
+.neon-brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+}
+
+.neon-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.neon-brand-org {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #c084fc;
+  text-transform: uppercase;
+}
+
+.neon-brand-sub {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #a1a1aa;
+  text-transform: uppercase;
+}
+
+/* Pill Navigation Buttons */
+.neon-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(22, 14, 40, 0.9);
+  border: 1px solid rgba(168, 85, 247, 0.38);
+  color: #e4e4e7;
+  border-radius: 9999px;
+  padding: 8px 18px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(12px);
+  white-space: nowrap;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.neon-pill-btn:hover {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #c084fc;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+}
+
+/* Core Neon Glass Card */
+.neon-card {
+  background: rgba(18, 12, 33, 0.82);
+  border: 1px solid rgba(168, 85, 247, 0.38);
+  border-radius: 22px;
+  box-shadow: 0 0 35px rgba(124, 58, 237, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  padding: 1.5rem;
+  position: relative;
+  z-index: 10;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Primary Gradient Action Button */
+.neon-btn-primary {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 50%, #a855f7 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.45);
+}
+
+.neon-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(168, 85, 247, 0.6);
+  filter: brightness(1.1);
+}
+
+.neon-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.neon-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Ghost / Secondary Action Button */
+.neon-btn-ghost {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.neon-btn-ghost:hover {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: #a855f7;
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   LIVE QUIZ QUESTION + ANSWERING SCREEN (IMAGES 4 & 5)
+   ========================================================= */
+
+.neon-quiz-card {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Row: Q 1/10 | Circular Timer | Trophy Info */
+.neon-question-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.neon-q-pill {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #e4e4e7;
+  letter-spacing: 0.02em;
+}
+
+/* Circular Timer Center Widget */
+.neon-timer-circle-widget {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neon-timer-svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.neon-timer-bg-ring {
+  fill: none;
+  stroke: rgba(168, 85, 247, 0.18);
+  stroke-width: 4;
+}
+
+.neon-timer-progress-ring {
+  fill: none;
+  stroke: #c084fc;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s linear, stroke 0.3s ease;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.8));
+}
+
+.neon-timer-progress-ring.urgent {
+  stroke: #ef4444;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9));
+}
+
+.neon-timer-number {
+  position: absolute;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.neon-timer-number.urgent {
+  color: #ef4444;
+  animation: neon-pulse 1s infinite alternate;
+}
+
+@keyframes neon-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+/* Quiz Trophy Badge */
+.neon-quiz-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: right;
+  max-width: 120px;
+}
+
+.neon-quiz-badge-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.neon-quiz-badge-sub {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #c084fc;
+  text-transform: uppercase;
+}
+
+.neon-quiz-badge-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Horizontal Progress Bar */
+.neon-progress-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.neon-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #c084fc);
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.7);
+}
+
+/* Question Content Box */
+.neon-question-box {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 1.25rem 1rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.neon-question-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #ffffff;
+  margin: 0;
+}
+
+/* Stacked Options Container */
+.neon-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* Base Option Button */
+.neon-option-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  color: #f4f4f5;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+
+.neon-option-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: 1;
+}
+
+.neon-option-letter {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.neon-option-item:hover:not(:disabled) {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(168, 85, 247, 0.09);
+  transform: translateX(2px);
+}
+
+/* Selected state (Image 4) */
+.neon-option-item.selected {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.18);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.4);
+}
+
+.neon-option-item.selected .neon-option-letter {
+  background: #a855f7;
+  color: #ffffff;
+}
+
+/* Correct state in results (Image 5) */
+.neon-option-item.is-correct {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.14);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.35);
+}
+
+.neon-option-item.is-correct .neon-option-letter {
+  background: #10b981;
+  color: #ffffff;
+}
+
+/* Incorrect state in results (Image 5) */
+.neon-option-item.is-incorrect {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.14);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.35);
+}
+
+.neon-option-item.is-incorrect .neon-option-letter {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Dimmed other options in results */
+.neon-option-item.is-dimmed {
+  opacity: 0.35;
+}
+
+/* Status banner under options */
+.neon-status-toast {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+}
+
+/* =========================================================
+   ROLE SELECTION SCREEN (IMAGE 1)
+   ========================================================= */
+
+.neon-role-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.neon-role-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.02em;
+}
+
+.neon-role-title span {
+  color: #c084fc;
+}
+
+.neon-role-subtitle {
+  font-size: 0.88rem;
+  color: #a1a1aa;
+  margin-bottom: 2rem;
+}
+
+/* Role Selection Screen Specific Framing - Exact Centered Stack */
+.neon-theme-wrapper.neon-role-wrapper {
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 2.5rem 1rem !important;
+}
+
+.neon-role-frame {
+  max-width: 440px !important;
+  margin: auto !important;
+}
+
+.neon-role-cards-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.25rem !important;
+  width: 100% !important;
+}
+
+/* Centered Dialog & Card Screens (Join Quiz, Lobby, Live Quiz) */
+.neon-theme-wrapper.neon-centered-wrapper {
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 2.25rem 1.5rem !important;
+}
+
+@media (max-height: 720px) {
+  .neon-theme-wrapper.neon-centered-wrapper {
+    justify-content: flex-start !important;
+    padding-top: 1.5rem !important;
+  }
+}
+
+.neon-centered-frame {
+  max-width: 580px !important;
+  margin: auto !important;
+}
+
+.neon-role-card {
+  padding: 1.5rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neon-role-card:hover {
+  transform: translateY(-3px);
+  border-color: #a855f7;
+  box-shadow: 0 0 35px rgba(168, 85, 247, 0.35);
+}
+
+.neon-role-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.6rem;
+}
+
+.neon-role-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.neon-role-card h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.neon-role-card p {
+  font-size: 0.88rem;
+  color: #a1a1aa;
+  margin: 0.2rem 0 1.25rem;
+  line-height: 1.45;
+}
+
+/* =========================================================
+   LIVE QUIZZES SCREEN (IMAGE 2)
+   ========================================================= */
+
+.neon-live-quizzes-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+  width: 100%;
+}
+
+.neon-live-quizzes-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 0.3rem;
+}
+
+.neon-live-indicator {
+  color: #c084fc;
+  font-weight: 800;
+}
+
+.neon-live-quizzes-subtitle {
+  font-size: 0.88rem;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+.neon-quiz-list-item {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.neon-quiz-item-top {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.neon-quiz-item-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.neon-quiz-item-info {
+  flex: 1;
+  text-align: left;
+}
+
+.neon-quiz-item-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.2rem;
+}
+
+.neon-quiz-item-desc {
+  font-size: 0.78rem;
+  color: #a1a1aa;
+  margin: 0 0 0.35rem;
+}
+
+.neon-available-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #34d399;
+}
+
+.neon-available-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+/* =========================================================
+   JOIN QUIZ SCREEN (IMAGE 3)
+   ========================================================= */
+
+.neon-join-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin: 0 0 0.3rem;
+  color: #ffffff;
+}
+
+.neon-join-title span {
+  color: #c084fc;
+}
+
+.neon-join-subtitle {
+  font-size: 0.82rem;
+  color: #a1a1aa;
+  margin: 0 0 1.25rem;
+}
+
+.neon-selected-quiz-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.neon-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.neon-form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d4d4d8;
+}
+
+.neon-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.neon-input-icon {
+  position: absolute;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.neon-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.85rem 1rem 0.85rem 2.8rem;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.neon-input:focus {
+  outline: none;
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.08);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.35);
+}
+
+.neon-input::placeholder {
+  color: #71717a;
+}
+
+/* =========================================================
+   RESPONSIVE BREAKPOINTS (MOBILE LARGE, MEDIUM, SMALL)
+   ========================================================= */
+
+/* Universal Mobile Enhancements (< 640px) */
+@media (max-width: 640px) {
+  .neon-mobile-frame,
+  .neon-role-frame,
+  .neon-centered-frame {
+    max-width: 100% !important;
+  }
+
+  /* Prevent auto-zoom on iOS */
+  .neon-input {
+    font-size: 16px !important;
+  }
+
+  .neon-btn-primary,
+  .neon-btn-ghost,
+  .neon-pill-btn,
+  .reaction-btn {
+    touch-action: manipulation;
+  }
+}
+
+/* 1. MOBILE LARGE (415px - 480px, e.g. iPhone 14/15/16 Pro Max, Galaxy S24 Ultra, Pixel 8 Pro) */
+@media (max-width: 480px) {
+  .neon-theme-wrapper {
+    padding: 1.5rem 1.15rem 2.5rem !important;
+  }
+
+  .neon-theme-wrapper.neon-role-wrapper,
+  .neon-theme-wrapper.neon-centered-wrapper {
+    padding: 1.5rem 1.15rem !important;
+  }
+
+  .neon-header-bar {
+    gap: 0.65rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .neon-brand-badge {
+    gap: 0.6rem;
+  }
+
+  .neon-brand-org {
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+  }
+
+  .neon-brand-sub {
+    font-size: 0.58rem;
+  }
+
+  .neon-pill-btn {
+    padding: 6px 13px;
+    font-size: 0.76rem;
+  }
+
+  .neon-card {
+    padding: 1.4rem 1.15rem;
+    border-radius: 20px;
+  }
+
+  .neon-role-title {
+    font-size: 1.55rem;
+    margin-top: 1.25rem;
+  }
+
+  .neon-role-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .neon-live-quizzes-title {
+    font-size: 1.4rem;
+  }
+
+  .neon-live-quizzes-subtitle {
+    font-size: 0.82rem;
+  }
+
+  .neon-join-title {
+    font-size: 1.4rem;
+  }
+
+  /* Participant Lobby Mobile Large */
+  .neon-theme-wrapper .participant-lobby-card {
+    padding: 1.75rem 1.25rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-counter-number {
+    font-size: 3.2rem !important;
+  }
+
+  .neon-theme-wrapper .reaction-btn {
+    font-size: 1.35rem !important;
+    padding: 6px 7px !important;
+  }
+
+  /* Live Quiz Question Mobile Large */
+  .neon-timer-circle-widget {
+    width: 54px;
+    height: 54px;
+  }
+
+  .neon-timer-number {
+    font-size: 1.15rem;
+  }
+
+  .neon-q-pill {
+    padding: 4px 10px;
+    font-size: 0.76rem;
+  }
+
+  .neon-quiz-badge {
+    max-width: 120px;
+  }
+
+  .neon-question-text {
+    font-size: 1.02rem;
+  }
+
+  .neon-option-item {
+    padding: 0.8rem 0.95rem;
+    min-height: 48px;
+    font-size: 0.9rem;
+  }
+}
+
+/* 2. MOBILE MEDIUM (361px - 414px, e.g. iPhone 12/13/14/15/16, Pixel 7/8, Galaxy S23) */
+@media (max-width: 414px) {
+  .neon-theme-wrapper {
+    padding: 1.25rem 0.9rem 2rem !important;
+  }
+
+  .neon-theme-wrapper.neon-role-wrapper,
+  .neon-theme-wrapper.neon-centered-wrapper {
+    padding: 1.25rem 0.9rem !important;
+  }
+
+  .neon-header-bar {
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .neon-brand-badge {
+    gap: 0.5rem;
+  }
+
+  .neon-brand-org {
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+  }
+
+  .neon-brand-sub {
+    font-size: 0.52rem;
+  }
+
+  .neon-pill-btn {
+    padding: 5px 11px;
+    font-size: 0.72rem;
+  }
+
+  .neon-card {
+    padding: 1.25rem 1rem;
+    border-radius: 18px;
+  }
+
+  .neon-role-title {
+    font-size: 1.45rem;
+    margin-top: 1rem;
+  }
+
+  .neon-role-subtitle {
+    font-size: 0.82rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .neon-role-icon-box {
+    width: 38px;
+    height: 38px;
+  }
+
+  .neon-role-card h2 {
+    font-size: 1.2rem;
+  }
+
+  .neon-role-card p {
+    font-size: 0.82rem;
+    margin-bottom: 1rem;
+  }
+
+  .neon-live-quizzes-title {
+    font-size: 1.3rem;
+  }
+
+  .neon-live-quizzes-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .neon-quiz-list-item {
+    padding: 1.15rem 0.9rem;
+  }
+
+  .neon-quiz-item-icon-box {
+    width: 38px;
+    height: 38px;
+  }
+
+  .neon-quiz-item-title {
+    font-size: 0.98rem;
+  }
+
+  .neon-join-title {
+    font-size: 1.35rem;
+  }
+
+  .neon-join-subtitle {
+    font-size: 0.78rem;
+  }
+
+  .neon-input {
+    padding: 0.8rem 0.85rem 0.8rem 2.5rem;
+  }
+
+  .neon-input-icon {
+    left: 0.85rem;
+  }
+
+  /* Participant Lobby Mobile Medium */
+  .neon-theme-wrapper .participant-lobby-card {
+    padding: 1.5rem 1rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-quiz-title {
+    font-size: 1.6rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-counter-number {
+    font-size: 2.8rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-counter-label {
+    font-size: 0.76rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-reaction-bar {
+    padding: 5px 10px !important;
+    gap: 0.4rem !important;
+  }
+
+  .neon-theme-wrapper .reaction-btn {
+    font-size: 1.25rem !important;
+    padding: 5px 6px !important;
+  }
+
+  /* Live Quiz Question Mobile Medium */
+  .neon-timer-circle-widget {
+    width: 50px;
+    height: 50px;
+  }
+
+  .neon-timer-number {
+    font-size: 1.05rem;
+  }
+
+  .neon-q-pill {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+  }
+
+  .neon-quiz-badge {
+    max-width: 105px;
+  }
+
+  .neon-quiz-badge-title {
+    font-size: 0.7rem;
+  }
+
+  .neon-question-box {
+    padding: 0.95rem 0.85rem;
+  }
+
+  .neon-question-text {
+    font-size: 0.96rem;
+    line-height: 1.4;
+  }
+
+  .neon-option-item {
+    padding: 0.72rem 0.85rem;
+    min-height: 46px;
+    font-size: 0.86rem;
+  }
+
+  .neon-option-letter {
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
+  }
+}
+
+/* 3. MOBILE SMALL (<= 360px, e.g. iPhone SE, Galaxy Z Flip outer, compact devices) */
+@media (max-width: 360px) {
+  .neon-theme-wrapper {
+    padding: 1rem 0.75rem 1.75rem !important;
+  }
+
+  .neon-theme-wrapper.neon-role-wrapper,
+  .neon-theme-wrapper.neon-centered-wrapper {
+    padding: 1rem 0.75rem !important;
+  }
+
+  .neon-header-bar {
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .neon-brand-badge {
+    gap: 0.35rem;
+  }
+
+  .neon-brand-org {
+    font-size: 0.52rem;
+    letter-spacing: 0.03em;
+  }
+
+  .neon-brand-sub {
+    font-size: 0.45rem;
+  }
+
+  .neon-pill-btn {
+    padding: 4px 8px;
+    font-size: 0.68rem;
+    gap: 0.25rem;
+  }
+
+  .neon-card {
+    padding: 1.1rem 0.75rem;
+    border-radius: 16px;
+  }
+
+  .neon-role-title {
+    font-size: 1.3rem;
+    margin-top: 0.75rem;
+  }
+
+  .neon-role-subtitle {
+    font-size: 0.78rem;
+    margin-bottom: 1rem;
+  }
+
+  .neon-role-icon-box {
+    width: 34px;
+    height: 34px;
+  }
+
+  .neon-role-card h2 {
+    font-size: 1.1rem;
+  }
+
+  .neon-role-card p {
+    font-size: 0.78rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .neon-btn-primary,
+  .neon-btn-ghost {
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+    min-height: 44px;
+  }
+
+  .neon-live-quizzes-title {
+    font-size: 1.18rem;
+  }
+
+  .neon-quiz-list-item {
+    padding: 1rem 0.75rem;
+  }
+
+  .neon-quiz-item-icon-box {
+    width: 34px;
+    height: 34px;
+  }
+
+  .neon-quiz-item-title {
+    font-size: 0.92rem;
+  }
+
+  .neon-quiz-item-desc {
+    font-size: 0.74rem;
+  }
+
+  .neon-join-title {
+    font-size: 1.25rem;
+  }
+
+  .neon-input {
+    padding: 0.75rem 0.75rem 0.75rem 2.2rem;
+  }
+
+  .neon-input-icon {
+    left: 0.75rem;
+  }
+
+  /* Participant Lobby Mobile Small */
+  .neon-theme-wrapper .participant-lobby-card {
+    padding: 1.25rem 0.75rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-quiz-title {
+    font-size: 1.4rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-counter-number {
+    font-size: 2.4rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-counter-label {
+    font-size: 0.72rem !important;
+  }
+
+  .neon-theme-wrapper .lobby-reaction-bar {
+    padding: 4px 6px !important;
+    gap: 0.25rem !important;
+  }
+
+  .neon-theme-wrapper .reaction-btn {
+    font-size: 1.15rem !important;
+    padding: 4px 5px !important;
+  }
+
+  /* Live Quiz Question Mobile Small */
+  .neon-timer-circle-widget {
+    width: 44px;
+    height: 44px;
+  }
+
+  .neon-timer-number {
+    font-size: 0.92rem;
+  }
+
+  .neon-q-pill {
+    padding: 3px 6px;
+    font-size: 0.66rem;
+  }
+
+  .neon-quiz-badge {
+    max-width: 85px;
+  }
+
+  .neon-quiz-badge-title {
+    font-size: 0.62rem;
+  }
+
+  .neon-question-box {
+    padding: 0.85rem 0.75rem;
+  }
+
+  .neon-question-text {
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+
+  .neon-option-item {
+    padding: 0.65rem 0.75rem;
+    min-height: 44px;
+    font-size: 0.82rem;
+    gap: 0.5rem;
+  }
+
+  .neon-option-letter {
+    width: 22px;
+    height: 22px;
+    font-size: 0.7rem;
+  }
+}
+
+/* 4. SHORT SCREEN HEIGHTS / LANDSCAPE MOBILE */
+@media (max-height: 680px) {
+  .neon-theme-wrapper,
+  .neon-theme-wrapper.neon-role-wrapper,
+  .neon-theme-wrapper.neon-centered-wrapper {
+    justify-content: flex-start !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 2rem !important;
+  }
+}
+
+/* =========================================================
+   PARTICIPANT LOBBY SCREEN (DARK NEON PURPLE)
+   ========================================================= */
+
+.neon-theme-wrapper .participant-lobby-card {
+  background: rgba(18, 12, 33, 0.85) !important;
+  border: 1px solid rgba(168, 85, 247, 0.38) !important;
+  box-shadow: 0 0 35px rgba(124, 58, 237, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-radius: 22px !important;
+  padding: 2.25rem 1.75rem !important;
+  text-align: center !important;
+}
+
+.neon-theme-wrapper .lobby-status-badge-wrap .quiz-status {
+  background: rgba(234, 179, 8, 0.15) !important;
+  border: 1px solid rgba(234, 179, 8, 0.4) !important;
+  color: #facc15 !important;
+  border-radius: 9999px !important;
+  padding: 5px 14px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+}
+
+.neon-theme-wrapper .lobby-quiz-title {
+  color: #ffffff !important;
+  font-size: 1.85rem !important;
+  font-weight: 800 !important;
+  margin: 0.5rem 0 1rem !important;
+}
+
+.neon-theme-wrapper .lobby-participant-info {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(168, 85, 247, 0.3) !important;
+  color: #e4e4e7 !important;
+  border-radius: 9999px !important;
+  padding: 6px 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.neon-theme-wrapper .lobby-participant-label {
+  color: #a1a1aa !important;
+  font-size: 0.85rem !important;
+}
+
+.neon-theme-wrapper .lobby-participant-name {
+  color: #c084fc !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+}
+
+.neon-theme-wrapper .lobby-counter-card {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.18) 0%, rgba(88, 28, 135, 0.28) 100%) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  border-radius: 16px !important;
+  padding: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+  box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.1) !important;
+}
+
+.neon-theme-wrapper .lobby-counter-number {
+  font-size: 3.5rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 20px rgba(192, 132, 252, 0.6) !important;
+  line-height: 1 !important;
+  margin-bottom: 0.4rem !important;
+}
+
+.neon-theme-wrapper .lobby-counter-label {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: #c084fc !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+/* Reaction bar in neon theme */
+.neon-theme-wrapper .lobby-reaction-bar-container {
+  margin-bottom: 1.5rem !important;
+}
+
+.neon-theme-wrapper .lobby-reaction-bar-label {
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: #a1a1aa !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  margin-bottom: 0.6rem !important;
+}
+
+.neon-theme-wrapper .lobby-reaction-bar {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  border-radius: 9999px !important;
+  padding: 6px 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.6rem !important;
+}
+
+.neon-theme-wrapper .reaction-btn {
+  background: transparent !important;
+  border: none !important;
+  font-size: 1.4rem !important;
+  cursor: pointer !important;
+  padding: 6px 8px !important;
+  border-radius: 8px !important;
+  transition: transform 0.15s ease, background 0.15s ease !important;
+}
+
+.neon-theme-wrapper .reaction-btn:hover:not(:disabled) {
+  transform: scale(1.25) !important;
+  background: rgba(168, 85, 247, 0.2) !important;
+}
+
+/* Waiting message card */
+.neon-theme-wrapper .lobby-message-card.waiting-state {
+  background: rgba(234, 179, 8, 0.08) !important;
+  border: 1px solid rgba(234, 179, 8, 0.3) !important;
+  color: #fef08a !important;
+  border-radius: 14px !important;
+  padding: 1.25rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.neon-theme-wrapper .lobby-message-card.waiting-state h3 {
+  color: #fde047 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  margin: 0 0 0.35rem !important;
+}
+
+.neon-theme-wrapper .lobby-message-card.waiting-state p {
+  color: #fef08a !important;
+  font-size: 0.85rem !important;
+  margin: 0 !important;
+  opacity: 0.85 !important;
+}
+
+.neon-theme-wrapper .lobby-exit-link {
+  background: transparent !important;
+  border: none !important;
+  color: #a1a1aa !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+  transition: color 0.2s ease !important;
+}
+
+.neon-theme-wrapper .lobby-exit-link:hover {
+  color: #c084fc !important;
+}
+
+
