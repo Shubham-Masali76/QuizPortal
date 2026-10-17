@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import NeonBackground from "./NeonBackground";
 import { CpuIcon } from "./NeonIcons";
 
@@ -6,6 +7,27 @@ export default function NeonLoadingScreen({
   subtitle = "AWS STUDENT BUILDER GROUP • NKOCET",
   status = "INITIALIZING PORTAL SESSION..."
 }) {
+  const [currentStatus, setCurrentStatus] = useState(status);
+
+  useEffect(() => {
+    if (status === "INITIALIZING PORTAL SESSION...") {
+      const t1 = setTimeout(() => {
+        setCurrentStatus("ESTABLISHING AWS SECURE PROTOCOL...");
+      }, 350);
+
+      const t2 = setTimeout(() => {
+        setCurrentStatus("SYNCHRONIZING PORTAL ASSETS...");
+      }, 700);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    } else {
+      setCurrentStatus(status);
+    }
+  }, [status]);
+
   return (
     <div className="neon-theme-wrapper neon-centered-wrapper" style={{ minHeight: "100vh", overflow: "hidden" }}>
       <NeonBackground />
@@ -40,7 +62,7 @@ export default function NeonLoadingScreen({
 
           <div className="neon-loader-status-text">
             <span className="neon-loader-status-dot" />
-            {status}
+            {currentStatus}
           </div>
         </div>
       </div>

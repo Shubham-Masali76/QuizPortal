@@ -101,9 +101,11 @@ function App() {
   const [quizToDelete, setQuizToDelete] = useState(null);
 
   useEffect(() => {
+    const startTime = Date.now();
+    const MIN_LOADING_TIME = 900; // smooth minimum window so the cyber loader displays nicely
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setAuthLoading(false);
 
       if (!currentUser) {
         setAuthPage("login");
@@ -111,6 +113,12 @@ function App() {
         setSelectedRole("host");
         setPage("dashboard");
       }
+
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, MIN_LOADING_TIME - elapsed);
+      setTimeout(() => {
+        setAuthLoading(false);
+      }, remaining);
     });
 
     return () => unsubscribe();
