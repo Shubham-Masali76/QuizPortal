@@ -299,189 +299,189 @@ function App() {
 
       let addedCount = 0;
       const baseOrder = questions.length;
-        const addedIds = [];
-        for (const q of rawQuestions) {
-          const getVal = (keys) => {
-            for (const k of Object.keys(q)) {
-              if (keys.includes(k.toLowerCase().replace(/ /g, ''))) return q[k];
-            }
-            return "";
-          };
-
-          const questionText = getVal(["question", "q", "title"]);
-          const opt1 = getVal(["option1", "opt1", "a", "1"]);
-          const opt2 = getVal(["option2", "opt2", "b", "2"]);
-          const opt3 = getVal(["option3", "opt3", "c", "3"]);
-          const opt4 = getVal(["option4", "opt4", "d", "4"]);
-          let correct = getVal(["correctanswer", "correct", "answer", "ans"]);
-
-          if (correct !== undefined && correct !== null && correct !== "") {
-            const cStr = String(correct).trim().toLowerCase();
-            const cleanStr = cStr.replace(/^(option|opt)\s*/, "").replace(/[.)\]]/g, "").trim();
-
-            if (cleanStr === "1" || cleanStr === "a" || cStr === String(opt1).trim().toLowerCase()) {
-              correct = 1;
-            } else if (cleanStr === "2" || cleanStr === "b" || cStr === String(opt2).trim().toLowerCase()) {
-              correct = 2;
-            } else if (cleanStr === "3" || cleanStr === "c" || cStr === String(opt3).trim().toLowerCase()) {
-              correct = 3;
-            } else if (cleanStr === "4" || cleanStr === "d" || cStr === String(opt4).trim().toLowerCase()) {
-              correct = 4;
-            } else {
-              correct = Number(correct);
-            }
+      const addedIds = [];
+      for (const q of rawQuestions) {
+        const getVal = (keys) => {
+          for (const k of Object.keys(q)) {
+            if (keys.includes(k.toLowerCase().replace(/ /g, ''))) return q[k];
           }
-
-          if (questionText && opt1 && opt2 && opt3 && opt4 && correct && !isNaN(correct)) {
-            const questionData = {
-              question: String(questionText),
-              options: [String(opt1), String(opt2), String(opt3), String(opt4)],
-              correctAnswer: Number(correct),
-              order: baseOrder + addedCount,
-              createdAt: new Date(),
-            };
-            const docRef = await addDoc(collection(db, "quizzes", quizId, "questions"), questionData);
-            addedIds.push(docRef.id);
-            addedCount++;
-          }
-        }
-
-        if (addedIds.length > 0) {
-          const qzSnap = await getDoc(doc(db, "quizzes", quizId));
-          const currentOrder = (qzSnap.exists() && Array.isArray(qzSnap.data().questionOrder))
-            ? qzSnap.data().questionOrder
-            : questions.map(q => q.id);
-          await updateDoc(doc(db, "quizzes", quizId), {
-            questionOrder: [...currentOrder, ...addedIds],
-          });
-        }
-
-        await fetchQuestions(quizId);
-        setMessage(`Successfully imported ${addedCount} questions!`);
-      } catch (error) {
-        console.error("Bulk upload error:", error);
-        setMessage("Failed to parse file. Please check the format.");
-      } finally {
-        setIsUploading(false);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      }
-    };
-
-    const handleAddQuestion = async () => {
-      if (
-        !question.trim() ||
-        !option1.trim() ||
-        !option2.trim() ||
-        !option3.trim() ||
-        !option4.trim() ||
-        !correctAnswer
-      ) {
-        setMessage("Please fill in all the question details!");
-        setTimeout(() => {
-          setMessage("");
-        }, 3000);
-        return;
-      }
-
-      try {
-        const questionData = {
-          question,
-          options: [option1, option2, option3, option4],
-          correctAnswer: Number(correctAnswer),
+          return "";
         };
 
-        if (editingQuestion) {
-          // Update existing question
-          await updateDoc(
-            doc(db, "quizzes", quizId, "questions", editingQuestion.id),
-            {
-              ...questionData,
-              order: editingQuestion.order !== undefined ? editingQuestion.order : questions.length,
-            },
-          );
+        const questionText = getVal(["question", "q", "title"]);
+        const opt1 = getVal(["option1", "opt1", "a", "1"]);
+        const opt2 = getVal(["option2", "opt2", "b", "2"]);
+        const opt3 = getVal(["option3", "opt3", "c", "3"]);
+        const opt4 = getVal(["option4", "opt4", "d", "4"]);
+        let correct = getVal(["correctanswer", "correct", "answer", "ans"]);
 
-          setMessage("Question updated successfully!");
+        if (correct !== undefined && correct !== null && correct !== "") {
+          const cStr = String(correct).trim().toLowerCase();
+          const cleanStr = cStr.replace(/^(option|opt)\s*/, "").replace(/[.)\]]/g, "").trim();
 
-          setTimeout(() => {
-            setMessage("");
-          }, 3000);
+          if (cleanStr === "1" || cleanStr === "a" || cStr === String(opt1).trim().toLowerCase()) {
+            correct = 1;
+          } else if (cleanStr === "2" || cleanStr === "b" || cStr === String(opt2).trim().toLowerCase()) {
+            correct = 2;
+          } else if (cleanStr === "3" || cleanStr === "c" || cStr === String(opt3).trim().toLowerCase()) {
+            correct = 3;
+          } else if (cleanStr === "4" || cleanStr === "d" || cStr === String(opt4).trim().toLowerCase()) {
+            correct = 4;
+          } else {
+            correct = Number(correct);
+          }
+        }
 
-          setEditingQuestion(null);
-        } else {
-          // Add new question
-          const newDocRef = await addDoc(collection(db, "quizzes", quizId, "questions"), {
-            ...questionData,
-            order: questions.length,
+        if (questionText && opt1 && opt2 && opt3 && opt4 && correct && !isNaN(correct)) {
+          const questionData = {
+            question: String(questionText),
+            options: [String(opt1), String(opt2), String(opt3), String(opt4)],
+            correctAnswer: Number(correct),
+            order: baseOrder + addedCount,
             createdAt: new Date(),
-          });
-
-          // Immediately update and lock questionOrder on quiz document
-          const qzSnap = await getDoc(doc(db, "quizzes", quizId));
-          const currentOrder = (qzSnap.exists() && Array.isArray(qzSnap.data().questionOrder))
-            ? qzSnap.data().questionOrder
-            : questions.map(q => q.id);
-          await updateDoc(doc(db, "quizzes", quizId), {
-            questionOrder: [...currentOrder, newDocRef.id],
-          });
-
-          setMessage("Question added successfully!");
-
-          setTimeout(() => {
-            setMessage("");
-          }, 3000);
+          };
+          const docRef = await addDoc(collection(db, "quizzes", quizId, "questions"), questionData);
+          addedIds.push(docRef.id);
+          addedCount++;
         }
+      }
 
-        await fetchQuestions(quizId);
+      if (addedIds.length > 0) {
+        const qzSnap = await getDoc(doc(db, "quizzes", quizId));
+        const currentOrder = (qzSnap.exists() && Array.isArray(qzSnap.data().questionOrder))
+          ? qzSnap.data().questionOrder
+          : questions.map(q => q.id);
+        await updateDoc(doc(db, "quizzes", quizId), {
+          questionOrder: [...currentOrder, ...addedIds],
+        });
+      }
 
-        // Clear form
-        setQuestion("");
-        setOption1("");
-        setOption2("");
-        setOption3("");
-        setOption4("");
-        setCorrectAnswer("");
-      } catch (error) {
-        console.error("Error saving question:", error);
-        setMessage("Something went wrong while saving the question!");
+      await fetchQuestions(quizId);
+      setMessage(`Successfully imported ${addedCount} questions!`);
+    } catch (error) {
+      console.error("Bulk upload error:", error);
+      setMessage("Failed to parse file. Please check the format.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAddQuestion = async () => {
+    if (
+      !question.trim() ||
+      !option1.trim() ||
+      !option2.trim() ||
+      !option3.trim() ||
+      !option4.trim() ||
+      !correctAnswer
+    ) {
+      setMessage("Please fill in all the question details!");
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+      return;
+    }
+
+    try {
+      const questionData = {
+        question,
+        options: [option1, option2, option3, option4],
+        correctAnswer: Number(correctAnswer),
+      };
+
+      if (editingQuestion) {
+        // Update existing question
+        await updateDoc(
+          doc(db, "quizzes", quizId, "questions", editingQuestion.id),
+          {
+            ...questionData,
+            order: editingQuestion.order !== undefined ? editingQuestion.order : questions.length,
+          },
+        );
+
+        setMessage("Question updated successfully!");
+
+        setTimeout(() => {
+          setMessage("");
+        }, 3000);
+
+        setEditingQuestion(null);
+      } else {
+        // Add new question
+        const newDocRef = await addDoc(collection(db, "quizzes", quizId, "questions"), {
+          ...questionData,
+          order: questions.length,
+          createdAt: new Date(),
+        });
+
+        // Immediately update and lock questionOrder on quiz document
+        const qzSnap = await getDoc(doc(db, "quizzes", quizId));
+        const currentOrder = (qzSnap.exists() && Array.isArray(qzSnap.data().questionOrder))
+          ? qzSnap.data().questionOrder
+          : questions.map(q => q.id);
+        await updateDoc(doc(db, "quizzes", quizId), {
+          questionOrder: [...currentOrder, newDocRef.id],
+        });
+
+        setMessage("Question added successfully!");
 
         setTimeout(() => {
           setMessage("");
         }, 3000);
       }
-    };
 
-    const fetchQuestions = async (id) => {
-      try {
-        const [qzSnap, querySnapshot] = await Promise.all([
-          getDoc(doc(db, "quizzes", id)),
-          getDocs(collection(db, "quizzes", id, "questions")),
-        ]);
+      await fetchQuestions(quizId);
 
-        const qOrder = qzSnap.exists() ? qzSnap.data().questionOrder : null;
-        const questionList = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+      // Clear form
+      setQuestion("");
+      setOption1("");
+      setOption2("");
+      setOption3("");
+      setOption4("");
+      setCorrectAnswer("");
+    } catch (error) {
+      console.error("Error saving question:", error);
+      setMessage("Something went wrong while saving the question!");
 
-        const sorted = sortQuestions(questionList, qOrder);
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    }
+  };
 
-        // If quiz document didn't have questionOrder yet, lock this order to Firestore
-        if (qzSnap.exists() && (!Array.isArray(qOrder) || qOrder.length === 0) && sorted.length > 0) {
-          updateDoc(doc(db, "quizzes", id), {
-            questionOrder: sorted.map(q => q.id),
-          }).catch(err => console.error("Error auto-saving questionOrder:", err));
-        }
+  const fetchQuestions = async (id) => {
+    try {
+      const [qzSnap, querySnapshot] = await Promise.all([
+        getDoc(doc(db, "quizzes", id)),
+        getDocs(collection(db, "quizzes", id, "questions")),
+      ]);
 
-        setQuestions(sorted);
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-        setMessage("Something went wrong while fetching the questions!");
+      const qOrder = qzSnap.exists() ? qzSnap.data().questionOrder : null;
+      const questionList = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-        setTimeout(() => {
-          setMessage("");
-        }, 3000);
+      const sorted = sortQuestions(questionList, qOrder);
+
+      // If quiz document didn't have questionOrder yet, lock this order to Firestore
+      if (qzSnap.exists() && (!Array.isArray(qOrder) || qOrder.length === 0) && sorted.length > 0) {
+        updateDoc(doc(db, "quizzes", id), {
+          questionOrder: sorted.map(q => q.id),
+        }).catch(err => console.error("Error auto-saving questionOrder:", err));
       }
-    };
+
+      setQuestions(sorted);
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      setMessage("Something went wrong while fetching the questions!");
+
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    }
+  };
 
   const handleEditQuestion = (question) => {
     setQuestion(question.question);
