@@ -668,50 +668,59 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
             {/* Results Phase: Glowing Vertical Bar Chart */}
             {quizStatus === "results" && (
-              <div className="neon-host-chart">
-                {currentQuestion.options?.map((opt, idx) => {
-                  const optionNumber = idx + 1;
-                  const isCorrect = currentQuestion.correctAnswer === optionNumber;
-                  const votes = optionCounts[optionNumber];
-                  const heightPct = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
-                  const styleConfig = optionStyles[idx % optionStyles.length];
-                  
-                  return (
-                    <div key={idx} className="neon-host-chart-col">
-                      <span className="neon-host-chart-votes">{votes}</span>
-                      <div className="neon-host-chart-bar-track">
-                        <div 
-                          className={`neon-host-chart-bar-fill ${isCorrect ? 'is-correct-bar' : ''}`}
-                          style={{
-                            height: `${Math.max(heightPct, 5)}%`,
-                            background: isCorrect 
-                              ? 'linear-gradient(180deg, #10b981 0%, #047857 100%)' 
-                              : (idx === 0 
-                                  ? 'linear-gradient(180deg, #f43f5e 0%, #be123c 100%)' 
-                                  : idx === 1 
-                                    ? 'linear-gradient(180deg, #0ea5e9 0%, #0369a1 100%)' 
-                                    : idx === 2 
-                                      ? 'linear-gradient(180deg, #eab308 0%, #a16207 100%)' 
-                                      : 'linear-gradient(180deg, #10b981 0%, #047857 100%)'),
-                          }}
-                        >
+              <div className="neon-host-results-stage">
+                <div className="neon-host-chart">
+                  {currentQuestion.options?.map((opt, idx) => {
+                    const optionNumber = idx + 1;
+                    const isCorrect = currentQuestion.correctAnswer === optionNumber;
+                    const votes = optionCounts[optionNumber] || 0;
+                    const heightPct = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+                    const styleConfig = optionStyles[idx % optionStyles.length];
+                    
+                    return (
+                      <div key={idx} className={`neon-host-chart-col ${isCorrect ? 'is-correct-col' : ''}`}>
+                        {/* Vote count and Correct pill stacked naturally */}
+                        <div className="neon-host-chart-header">
                           {isCorrect && (
-                            <div className="neon-correct-marker">
-                              <CheckCircleIcon size={14} />
+                            <div className="neon-correct-pill">
+                              <CheckCircleIcon size={12} />
                               <span>CORRECT</span>
                             </div>
                           )}
+                          <span className="neon-host-chart-votes">{votes}</span>
+                        </div>
+
+                        {/* Bar Track & Fill */}
+                        <div className="neon-host-chart-bar-track">
+                          <div 
+                            className={`neon-host-chart-bar-fill ${isCorrect ? 'is-correct-bar' : ''}`}
+                            style={{
+                              height: `${votes > 0 ? Math.max(heightPct, 12) : 6}%`,
+                              background: isCorrect 
+                                ? 'linear-gradient(180deg, #10b981 0%, #047857 100%)' 
+                                : (idx === 0 
+                                    ? 'linear-gradient(180deg, #f43f5e 0%, #be123c 100%)' 
+                                    : idx === 1 
+                                      ? 'linear-gradient(180deg, #0ea5e9 0%, #0369a1 100%)' 
+                                      : idx === 2 
+                                        ? 'linear-gradient(180deg, #eab308 0%, #a16207 100%)' 
+                                        : 'linear-gradient(180deg, #10b981 0%, #047857 100%)'),
+                            }}
+                          />
+                        </div>
+
+                        {/* Option Details Card (Below Baseline Shelf) */}
+                        <div className={`neon-host-chart-card ${isCorrect ? 'is-correct-card' : ''}`}>
+                          <span className={`neon-host-opt-badge ${styleConfig.class}`}>
+                            <span style={{ fontSize: '0.65rem', marginRight: '2px' }}>{styleConfig.symbol}</span>
+                            <span>{styleConfig.letter}</span>
+                          </span>
+                          <span className="neon-host-chart-opt-text">{opt}</span>
                         </div>
                       </div>
-                      <div className="neon-host-chart-label">
-                        <span className="neon-host-opt-badge" style={{ width: '28px', height: '28px', fontSize: '0.85rem' }}>
-                          {styleConfig.letter}
-                        </span>
-                        <span>{opt}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
 
