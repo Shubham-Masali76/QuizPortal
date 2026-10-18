@@ -46,65 +46,63 @@ export default function LeaderboardView({ participants }) {
   }
 
   const maxScore = topParticipants.reduce((max, p) => Math.max(max, p.score || 1), 1);
-  const colors = ['#ff595e', '#ff924c', '#ffca3a', '#c5ca30', '#8ac926', '#1982c4', '#6a4c93', '#8338ec', '#ff006e', '#3a86ff'];
+  const gradients = [
+    'linear-gradient(90deg, #7c3aed, #c084fc)',
+    'linear-gradient(90deg, #0284c7, #38bdf8)',
+    'linear-gradient(90deg, #059669, #34d399)',
+    'linear-gradient(90deg, #d97706, #fbbf24)',
+    'linear-gradient(90deg, #e11d48, #fb7185)',
+    'linear-gradient(90deg, #4f46e5, #818cf8)',
+    'linear-gradient(90deg, #0891b2, #22d3ee)',
+    'linear-gradient(90deg, #9333ea, #e879f9)',
+    'linear-gradient(90deg, #c026d3, #f472b6)',
+    'linear-gradient(90deg, #2563eb, #60a5fa)',
+  ];
 
   return (
-    <div className="horizontal-leaderboard" style={{ position: 'relative', height: `${topParticipants.length * 60}px`, marginTop: '2rem', textAlign: 'left' }}>
+    <div className="neon-leaderboard-track" style={{ height: `${topParticipants.length * 58}px` }}>
       {topParticipants.map((p, idx) => {
         // Current index determines vertical position
         const currentIndex = phase === 3 ? newOrderMap[p.id] : idx;
         const currentScore = phase >= 2 ? p.score : p.oldScore;
-        const widthPct = Math.max(10, (currentScore / maxScore) * 100);
+        const widthPct = Math.max(12, (currentScore / maxScore) * 100);
         
         return (
           <div 
             key={p.id} 
+            className="neon-leaderboard-row"
             style={{ 
-              position: 'absolute',
-              top: `${currentIndex * 60}px`,
-              left: 0,
-              right: 0,
-              height: '50px',
-              display: 'flex', 
-              alignItems: 'center', 
-              transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)' 
+              top: `${currentIndex * 58}px`,
             }}
           >
-            <div style={{ width: '80px', fontWeight: 'bold', fontSize: '1.2rem', textAlign: 'right', paddingRight: '1rem' }}>
-              {currentScore || 0} p
+            <div className="neon-leaderboard-score-tag">
+              {currentScore || 0} <span style={{ fontSize: '0.85rem', color: '#c084fc' }}>pts</span>
             </div>
             
-            <div style={{ flex: 1, position: 'relative', height: '40px' }}>
-              <div style={{ 
-                width: `${widthPct}%`, 
-                height: '100%', 
-                backgroundColor: colors[currentIndex % colors.length], 
-                transition: 'width 0.8s ease-out, background-color 0.8s ease',
-                borderRadius: '0 20px 20px 0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                paddingRight: '10px'
-              }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', transform: 'translateX(100%)', position: 'absolute', right: '-10px' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{p.avatar}</span>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{p.name}</span>
+            <div className="neon-leaderboard-bar-slot">
+              <div 
+                className="neon-leaderboard-bar-fill"
+                style={{ 
+                  width: `${widthPct}%`, 
+                  background: gradients[currentIndex % gradients.length], 
+                }}
+              >
+                 <div className="neon-leaderboard-user-info">
+                    <span style={{ fontSize: '1.45rem', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))' }}>{p.avatar || '👤'}</span>
+                    <span style={{ fontSize: '1.15rem', fontWeight: 800, whiteSpace: 'nowrap', textShadow: '0 2px 4px rgba(0,0,0,0.6)' }}>{p.name}</span>
                  </div>
               </div>
             </div>
 
             {/* Flying Points Animation */}
             {p.earned > 0 && phase < 2 && (
-              <div style={{ 
-                position: 'absolute', 
-                right: phase === 1 ? 'calc(100% - 100px)' : '20px', 
-                color: '#28a745', 
-                fontWeight: 'bold', 
-                fontSize: '1.5rem',
-                opacity: 1,
-                transition: 'right 1.5s ease-in-out',
-                zIndex: 10
-              }}>
+              <div 
+                className="neon-flying-points"
+                style={{ 
+                  right: phase === 1 ? 'calc(100% - 110px)' : '25px', 
+                  opacity: 1,
+                }}
+              >
                 +{p.earned}
               </div>
             )}
@@ -114,3 +112,4 @@ export default function LeaderboardView({ participants }) {
     </div>
   );
 }
+

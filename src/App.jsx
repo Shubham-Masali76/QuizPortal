@@ -825,22 +825,15 @@ function App() {
   if (page === "host-waiting-room") {
     return (
       <div className="app">
-        <DashboardLayout
-          page={page}
+        <HostWaitingRoom
+          quizId={quizId}
+          initialTitle={title}
+          initialDescription={description}
+          initialCode={quizCode}
           setPage={setPage}
-          handleMyQuizzes={handleMyQuizzes}
-          handleLogout={handleLogout}
-        >
-          <HostWaitingRoom
-            quizId={quizId}
-            initialTitle={title}
-            initialDescription={description}
-            initialCode={quizCode}
-            setPage={setPage}
-            setQuizStatus={setQuizStatus}
-          />
-          <Toast message={message} />
-        </DashboardLayout>
+          setQuizStatus={setQuizStatus}
+        />
+        <Toast message={message} />
       </div>
     );
   }
@@ -848,18 +841,12 @@ function App() {
   if (page === "host-live") {
     return (
       <div className="app">
-        <DashboardLayout
-          page={page}
-          setPage={setPage}
-          handleMyQuizzes={handleMyQuizzes}
-          handleLogout={handleLogout}
-        >
-          <HostLiveQuiz quizId={quizId} setPage={setPage} />
-          <Toast message={message} />
-        </DashboardLayout>
+        <HostLiveQuiz quizId={quizId} setPage={setPage} />
+        <Toast message={message} />
       </div>
     );
   }
+
 
   if (page === "quizzes") {
     return (

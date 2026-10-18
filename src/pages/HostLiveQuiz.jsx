@@ -5,6 +5,8 @@ import { db, rtdb } from "../services/firebase";
 import LeaderboardView from "../components/LeaderboardView";
 import PodiumView from "../components/PodiumView";
 import { sortQuestions } from "../utils/helpers";
+import NeonBackground from "../components/NeonBackground";
+import { CpuIcon, TrophyIcon, UsersIcon, CheckCircleIcon } from "../components/NeonIcons";
 
 const HostLiveQuiz = ({ quizId, setPage }) => {
   const [questions, setQuestions] = useState([]);
@@ -454,10 +456,31 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
   };
 
   if (questions.length === 0 && quizStatus !== "error") {
-    return <div className="host-live-container"><h2>Loading Quiz...</h2></div>;
+    return (
+      <div className="neon-theme-wrapper neon-centered-wrapper">
+        <NeonBackground />
+        <div className="neon-host-frame" style={{ alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+          <div className="neon-card" style={{ textAlign: "center", padding: "3rem" }}>
+            <h2 style={{ fontSize: "1.8rem", fontWeight: 800, marginBottom: "0.5rem" }}>Loading Quiz...</h2>
+            <p style={{ color: "#a1a1aa" }}>Synchronizing live questions and participant state...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
   if (quizStatus === "error") {
-    return <div className="host-live-container"><h2>Error: No questions found for this quiz.</h2><button onClick={handleEndQuiz}>Back to Dashboard</button></div>;
+    return (
+      <div className="neon-theme-wrapper neon-centered-wrapper">
+        <NeonBackground />
+        <div className="neon-host-frame" style={{ alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+          <div className="neon-card" style={{ textAlign: "center", padding: "3rem" }}>
+            <h2 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#f87171", marginBottom: "1rem" }}>No Questions Found</h2>
+            <p style={{ color: "#a1a1aa", marginBottom: "2rem" }}>There are no questions configured for this quiz session.</p>
+            <button className="neon-btn-primary" onClick={handleEndQuiz}>Back to Dashboard</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const currentQuestion = (quizData?.currentQuestionId && questions.find(q => q.id === quizData.currentQuestionId))
@@ -475,179 +498,307 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
   });
   const maxVotes = Math.max(...Object.values(optionCounts), 1); // avoid div by 0
 
+  // Timer gauge constants
+  const totalLimit = quizData?.questionTimeLimit || quizData?.answeringTimeLimit || 20;
+  const radius = 32;
+  const circumference = 2 * Math.PI * radius; // ~201.06
+  const strokeOffset = circumference - (Math.min(timeLeft, totalLimit) / totalLimit) * circumference;
+  const isUrgent = timeLeft <= 5 && quizStatus === "answering";
+  const progressPercent = activeParticipants.length > 0 
+    ? Math.min(100, (responses.length / activeParticipants.length) * 100) 
+    : 0;
+
+  const optionStyles = [
+    { class: "opt-rose", symbol: "▲", letter: "A" },
+    { class: "opt-sky", symbol: "◆", letter: "B" },
+    { class: "opt-amber", symbol: "●", letter: "C" },
+    { class: "opt-emerald", symbol: "■", letter: "D" },
+  ];
+
   return (
-    <div className="host-live-container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-      
-      {quizStatus === "leaderboard" ? (
-        <div className="leaderboard-view">
-          <div style={{ display: 'inline-block', padding: '0.4rem 1.2rem', borderRadius: '20px', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '1rem' }}>
-            ✓ Quiz Completed
-          </div>
-          <h2 style={{ fontSize: '3rem', margin: '0.5rem 0 2rem 0', color: '#ffca3a', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>Final Podium</h2>
-          <PodiumView participants={activeParticipants} />
-          {activeParticipants.length === 0 && (
-            <p style={{ color: '#888', marginTop: '1.5rem', fontSize: '1.1rem' }}>
-              No active participants submitted answers in this session.
-            </p>
-          )}
-          <div style={{ marginTop: '3.5rem', display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button 
-              type="button"
-              className="primary-btn" 
-              onClick={() => setPage("analytics")} 
-              style={{ padding: '0.9rem 2.5rem', fontSize: '1.2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
-            >
-              <span>View Analytics & Reports</span>
-              <span>→</span>
-            </button>
-            <button 
-              type="button"
-              className="secondary-btn" 
-              onClick={handleEndQuiz} 
-              style={{ padding: '0.9rem 2rem', fontSize: '1.2rem', cursor: 'pointer' }}
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="question-view">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <div className="status-badge" style={{ fontWeight: 'bold', color: '#666' }}>
-              Question {currentQuestionIndex + 1} of {questions.length}
+    <div className="neon-theme-wrapper">
+      <NeonBackground />
+      <div className="neon-host-frame">
+        {/* Top Header Bar */}
+        <header className="neon-host-header">
+          <div className="neon-brand-badge">
+            <CpuIcon size={28} />
+            <div className="neon-brand-text">
+              <span className="neon-brand-org">AWS STUDENT BUILDER GROUP</span>
+              <span className="neon-brand-sub">AT NKOCET • HOST CONSOLE</span>
             </div>
+          </div>
+
+          <div className="neon-host-top-badges">
+            {quizStatus !== "leaderboard" && (
+              <>
+                <span className="neon-q-pill">
+                  QUESTION {currentQuestionIndex + 1} OF {questions.length}
+                </span>
+                <span className="neon-q-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <UsersIcon size={16} />
+                  <span>{responses.length} / {activeParticipants.length} Answered</span>
+                </span>
+              </>
+            )}
             <button 
-              type="button"
-              className="delete-question-btn" 
+              type="button" 
+              className="neon-danger-pill-btn" 
               onClick={() => setShowEndDialog(true)}
-              style={{ padding: '0.4rem 1.1rem', fontSize: '0.9rem', cursor: 'pointer', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px' }}
             >
               End Quiz
             </button>
           </div>
-          
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>{currentQuestion.question}</h1>
+        </header>
 
-          {quizStatus === "answering" && (
-            <div className="timer" style={{ fontSize: '4rem', fontWeight: 'bold', color: timeLeft <= 5 ? 'red' : '#333' }}>
-              {timeLeft}
+        {/* Live Quiz Main Stage */}
+        {quizStatus === "leaderboard" ? (
+          <div className="neon-host-card" style={{ textAlign: 'center', padding: '3.5rem 2rem' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.45rem 1.4rem', borderRadius: '9999px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.35)', color: '#4ade80', fontWeight: '800', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
+              ✓ Quiz Completed
             </div>
-          )}
+            <h1 style={{ fontSize: '3.2rem', fontWeight: 900, margin: '0.25rem 0 1rem 0', color: '#ffca3a', textShadow: '0 0 25px rgba(255, 202, 58, 0.5)' }}>
+              CHAMPIONS PODIUM
+            </h1>
+            <p style={{ color: '#a1a1aa', fontSize: '1.1rem', marginBottom: '2rem' }}>
+              Congratulations to all top performers of this session!
+            </p>
 
-          {quizStatus === "answering" && (
-            <div className="options-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '2rem 0' }}>
-            {currentQuestion.options?.map((opt, idx) => (
-                <div 
-                  key={idx} 
-                  className="option-card"
-                  style={{
-                    padding: '1.5rem',
-                    border: '2px solid #ddd',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                  }}
-                >
-                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{opt}</span>
-                </div>
-            ))}
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <PodiumView participants={activeParticipants} />
             </div>
-          )}
 
-          {quizStatus === "results" && (
-            <div className="bar-chart" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', height: '350px', gap: '2rem', borderBottom: '2px solid #333', paddingBottom: '0.5rem', marginTop: '3rem' }}>
-              {currentQuestion.options?.map((opt, idx) => {
-                const optionNumber = idx + 1;
-                const isCorrect = currentQuestion.correctAnswer === optionNumber;
-                const votes = optionCounts[optionNumber];
-                const heightPct = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
-                const colors = ['#a0c4ff', '#ffc6ff', '#ff595e', '#8eecf5', '#ffd6a5'];
-                
-                return (
-                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
-                    <span style={{ marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '1.5rem' }}>{votes}</span>
-                    <div style={{ height: '250px', width: '100%', display: 'flex', alignItems: 'flex-end' }}>
-                      <div style={{ 
-                        width: '100%', 
-                        height: `${Math.max(heightPct, 2)}%`, 
-                        backgroundColor: isCorrect ? '#4ade80' : colors[idx % colors.length], 
-                        transition: 'height 1s ease-out',
-                        borderRadius: '4px 4px 0 0'
-                      }}></div>
-                    </div>
-                    <span style={{ marginTop: '1rem', textAlign: 'center', fontSize: '1rem', color: '#666', minHeight: '40px' }}>{opt}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {quizStatus === "question_leaderboard" && (
-            <div className="card" style={{ marginTop: '2rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>Current Leaderboard</h3>
-              <LeaderboardView participants={activeParticipants} />
-            </div>
-          )}
-
-          <div className="controls" style={{ marginTop: '2rem' }}>
-            {quizStatus === "answering" && (
-              <button className="secondary-btn" onClick={handleShowResults}>Skip Timer & Show Results</button>
+            {activeParticipants.length === 0 && (
+              <p style={{ color: '#71717a', marginTop: '2rem', fontSize: '1.1rem' }}>
+                No active participants submitted answers in this session.
+              </p>
             )}
 
+            <div style={{ marginTop: '3.5rem', display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button 
+                type="button"
+                className="neon-btn-primary" 
+                onClick={() => setPage("analytics")} 
+                style={{ width: 'auto', padding: '0.95rem 2.5rem', fontSize: '1.15rem' }}
+              >
+                <span>View Analytics & Reports</span>
+                <span>→</span>
+              </button>
+              <button 
+                type="button"
+                className="neon-btn-ghost" 
+                onClick={handleEndQuiz} 
+                style={{ width: 'auto', padding: '0.95rem 2rem', fontSize: '1.15rem' }}
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="neon-host-card">
+            {/* Answering Phase Timer */}
+            {quizStatus === "answering" && (
+              <div className="neon-host-timer-circle">
+                <svg className="neon-timer-svg" viewBox="0 0 76 76">
+                  <circle
+                    className="neon-timer-bg-ring"
+                    cx="38"
+                    cy="38"
+                    r={radius}
+                    strokeWidth="5"
+                  />
+                  <circle
+                    className={`neon-timer-progress-ring ${isUrgent ? "urgent" : ""}`}
+                    cx="38"
+                    cy="38"
+                    r={radius}
+                    strokeWidth="5"
+                    style={{
+                      strokeDasharray: circumference,
+                      strokeDashoffset: strokeOffset,
+                    }}
+                  />
+                </svg>
+                <span className={`neon-timer-number ${isUrgent ? "urgent" : ""}`}>
+                  {timeLeft}
+                </span>
+              </div>
+            )}
+
+            {/* Question Text */}
+            <h1 className="neon-host-question-title">
+              {currentQuestion.question}
+            </h1>
+
+            {/* Answering Phase: 2x2 Option Grid */}
+            {quizStatus === "answering" && (
+              <>
+                <div className="neon-host-options-grid">
+                  {currentQuestion.options?.map((opt, idx) => {
+                    const styleConfig = optionStyles[idx % optionStyles.length];
+                    return (
+                      <div key={idx} className={`neon-host-opt-card ${styleConfig.class}`}>
+                        <div className="neon-host-opt-badge">
+                          <span>{styleConfig.symbol}</span>
+                          <span style={{ marginLeft: '4px' }}>{styleConfig.letter}</span>
+                        </div>
+                        <span className="neon-host-opt-text">{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Response progress ticker */}
+                <div className="neon-host-response-bar">
+                  <span>Responses Received:</span>
+                  <div className="neon-host-response-track">
+                    <div 
+                      className="neon-host-response-fill"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  <span><strong>{responses.length}</strong> of <strong>{activeParticipants.length}</strong> joined</span>
+                </div>
+              </>
+            )}
+
+            {/* Results Phase: Glowing Vertical Bar Chart */}
             {quizStatus === "results" && (
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button className="primary-btn" onClick={handleShowLeaderboard} style={{ padding: '0.8rem 2.2rem', fontSize: '1.1rem' }}>
+              <div className="neon-host-chart">
+                {currentQuestion.options?.map((opt, idx) => {
+                  const optionNumber = idx + 1;
+                  const isCorrect = currentQuestion.correctAnswer === optionNumber;
+                  const votes = optionCounts[optionNumber];
+                  const heightPct = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+                  const styleConfig = optionStyles[idx % optionStyles.length];
+                  
+                  return (
+                    <div key={idx} className="neon-host-chart-col">
+                      <span className="neon-host-chart-votes">{votes}</span>
+                      <div className="neon-host-chart-bar-track">
+                        <div 
+                          className={`neon-host-chart-bar-fill ${isCorrect ? 'is-correct-bar' : ''}`}
+                          style={{
+                            height: `${Math.max(heightPct, 5)}%`,
+                            background: isCorrect 
+                              ? 'linear-gradient(180deg, #10b981 0%, #047857 100%)' 
+                              : (idx === 0 
+                                  ? 'linear-gradient(180deg, #f43f5e 0%, #be123c 100%)' 
+                                  : idx === 1 
+                                    ? 'linear-gradient(180deg, #0ea5e9 0%, #0369a1 100%)' 
+                                    : idx === 2 
+                                      ? 'linear-gradient(180deg, #eab308 0%, #a16207 100%)' 
+                                      : 'linear-gradient(180deg, #10b981 0%, #047857 100%)'),
+                          }}
+                        >
+                          {isCorrect && (
+                            <div className="neon-correct-marker">
+                              <CheckCircleIcon size={14} />
+                              <span>CORRECT</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="neon-host-chart-label">
+                        <span className="neon-host-opt-badge" style={{ width: '28px', height: '28px', fontSize: '0.85rem' }}>
+                          {styleConfig.letter}
+                        </span>
+                        <span>{opt}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Question Leaderboard Phase */}
+            {quizStatus === "question_leaderboard" && (
+              <div style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '1.5rem' }}>
+                  <TrophyIcon size={24} color="#ffd700" />
+                  <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    CURRENT STANDINGS
+                  </h3>
+                </div>
+                <LeaderboardView participants={activeParticipants} />
+              </div>
+            )}
+
+            {/* Stage Action Controls */}
+            <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {quizStatus === "answering" && (
+                <button 
+                  type="button"
+                  className="neon-btn-ghost" 
+                  onClick={handleShowResults}
+                  style={{ width: 'auto', padding: '0.85rem 2rem' }}
+                >
+                  Skip Timer & Show Results ⚡
+                </button>
+              )}
+
+              {quizStatus === "results" && (
+                <button 
+                  type="button"
+                  className="neon-btn-primary" 
+                  onClick={handleShowLeaderboard}
+                  style={{ width: 'auto', padding: '0.95rem 2.5rem', fontSize: '1.15rem' }}
+                >
                   {currentQuestionIndex + 1 < questions.length 
                     ? "Show Leaderboard →" 
                     : "Show Final Leaderboard →"}
                 </button>
-              </div>
-            )}
+              )}
 
-            {quizStatus === "question_leaderboard" && (
-              <button className="primary-btn" onClick={handleNextQuestion} style={{ padding: '0.8rem 2.2rem', fontSize: '1.1rem' }}>
-                {currentQuestionIndex + 1 < questions.length 
-                  ? `Next Question (${currentQuestionIndex + 2}/${questions.length}) →` 
-                  : "View Final Podium →"}
-              </button>
-            )}
-          </div>
-          
-          <div style={{ marginTop: '2rem', color: '#666' }}>
-            Responses: {responses.length} / {activeParticipants.length}
-          </div>
-        </div>
-      )}
-
-      {showEndDialog && (
-        <div className="dialog-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div className="dialog-box" style={{ background: '#fff', borderRadius: '14px', padding: '2rem', maxWidth: '420px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
-            <h2 style={{ color: '#111', marginBottom: '0.75rem', fontSize: '1.4rem' }}>End Quiz Now?</h2>
-            <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-              Are you sure you want to end this quiz? This will finalize scores and show the final results to all participants.
-            </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button 
-                type="button" 
-                className="dialog-cancel-btn"
-                onClick={() => setShowEndDialog(false)}
-                style={{ padding: '0.6rem 1.4rem', borderRadius: '8px', border: '1px solid #ccc', background: '#f4f4f5', cursor: 'pointer', fontWeight: 600 }}
-              >
-                Cancel
-              </button>
-              <button 
-                type="button" 
-                className="dialog-delete-btn"
-                onClick={confirmEndQuiz}
-                style={{ padding: '0.6rem 1.4rem', borderRadius: '8px', border: 'none', background: '#ef4444', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Yes, End Quiz
-              </button>
+              {quizStatus === "question_leaderboard" && (
+                <button 
+                  type="button"
+                  className="neon-btn-primary" 
+                  onClick={handleNextQuestion}
+                  style={{ width: 'auto', padding: '0.95rem 2.5rem', fontSize: '1.15rem' }}
+                >
+                  {currentQuestionIndex + 1 < questions.length 
+                    ? `Next Question (${currentQuestionIndex + 2}/${questions.length}) →` 
+                    : "View Final Podium 🏆"}
+                </button>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Cyber End Quiz Modal */}
+        {showEndDialog && (
+          <div className="neon-dialog-overlay">
+            <div className="neon-dialog-box">
+              <h2 className="neon-dialog-title">End Quiz Now?</h2>
+              <p className="neon-dialog-desc">
+                Are you sure you want to end this quiz? This will finalize scores and show the final results and podium to all participants.
+              </p>
+              <div className="neon-dialog-actions">
+                <button 
+                  type="button" 
+                  className="neon-btn-ghost"
+                  onClick={() => setShowEndDialog(false)}
+                  style={{ width: 'auto', padding: '0.75rem 1.75rem' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="neon-danger-pill-btn"
+                  onClick={confirmEndQuiz}
+                  style={{ padding: '0.75rem 1.75rem', fontSize: '0.95rem', borderRadius: '12px' }}
+                >
+                  Yes, End Quiz
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 export default HostLiveQuiz;
+

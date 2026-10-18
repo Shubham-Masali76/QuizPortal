@@ -5,6 +5,8 @@ import { db, rtdb } from "../services/firebase";
 import ParticipantAvatarCluster from "../components/ParticipantAvatarCluster";
 import Toast from "../components/Toast";
 import { sortQuestions } from "../utils/helpers";
+import NeonBackground from "../components/NeonBackground";
+import { CpuIcon, UsersIcon } from "../components/NeonIcons";
 
 export default function HostWaitingRoom({
   quizId,
@@ -239,9 +241,13 @@ export default function HostWaitingRoom({
 
   if (loading) {
     return (
-      <div className="waiting-room-page">
-        <div className="waiting-room-loading">
-          <h2>Loading Waiting Room...</h2>
+      <div className="neon-theme-wrapper neon-centered-wrapper">
+        <NeonBackground />
+        <div className="neon-host-frame" style={{ alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+          <div className="neon-card" style={{ textAlign: "center", padding: "3rem" }}>
+            <h2 style={{ fontSize: "1.8rem", fontWeight: 800, marginBottom: "0.5rem" }}>Loading Waiting Room...</h2>
+            <p style={{ color: "#a1a1aa" }}>Preparing lobby and synchronizing participant network...</p>
+          </div>
         </div>
       </div>
     );
@@ -249,94 +255,136 @@ export default function HostWaitingRoom({
 
   if (error) {
     return (
-      <div className="waiting-room-page">
-        <div className="waiting-room-error">
-          <p>{error}</p>
-          <button className="primary-btn" onClick={() => setPage("quizzes")}>
-            ← Back to My Quizzes
-          </button>
+      <div className="neon-theme-wrapper neon-centered-wrapper">
+        <NeonBackground />
+        <div className="neon-host-frame" style={{ alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+          <div className="neon-card" style={{ textAlign: "center", padding: "3rem" }}>
+            <h2 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#f87171", marginBottom: "1rem" }}>Session Error</h2>
+            <p style={{ color: "#a1a1aa", marginBottom: "2rem" }}>{error}</p>
+            <button className="neon-btn-primary" onClick={() => setPage("quizzes")}>
+              ← Back to My Quizzes
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="waiting-room-page">
-      <div className="waiting-room-top-nav">
-        <button className="secondary-btn" onClick={() => setPage("editor")}>
-          ← Back to Quiz Editor
-        </button>
-        <button className="secondary-btn" onClick={() => setPage("quizzes")}>
-          My Quizzes
-        </button>
-      </div>
+    <div className="neon-theme-wrapper">
+      <NeonBackground />
+      <div className="neon-host-frame">
+        <header className="neon-host-header">
+          <div className="neon-brand-badge">
+            <CpuIcon size={28} />
+            <div className="neon-brand-text">
+              <span className="neon-brand-org">AWS STUDENT BUILDER GROUP</span>
+              <span className="neon-brand-sub">AT NKOCET • WAITING ROOM</span>
+            </div>
+          </div>
 
-      <div className="waiting-room-header">
-        <h1>{quizData.title}</h1>
-        {quizData.description && <p>{quizData.description}</p>}
-      </div>
+          <div className="neon-host-top-badges">
+            <button type="button" className="neon-pill-btn" onClick={() => setPage("editor")}>
+              ← Back to Quiz Editor
+            </button>
+            <button type="button" className="neon-pill-btn" onClick={() => setPage("quizzes")}>
+              My Quizzes
+            </button>
+          </div>
+        </header>
 
-      <div className="waiting-room-code-bar">
-        <span className="code-label">QUIZ CODE:</span>
-        <span className="code-value">{quizData.quizCode || "------"}</span>
-        <button className="copy-code-btn" onClick={handleCopyCode}>
-          {copied ? "Copied" : "Copy Code"}
-        </button>
-      </div>
+        <div className="neon-host-card" style={{ padding: '2.5rem', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.5rem' }}>
+            {quizData.title}
+          </h1>
+          {quizData.description && (
+            <p style={{ color: '#a1a1aa', fontSize: '1.05rem', margin: '0 auto 1.5rem', maxWidth: '640px' }}>
+              {quizData.description}
+            </p>
+          )}
 
-      <ParticipantAvatarCluster
-        activeParticipants={activeParticipants}
-        quizId={quizId}
-      />
+          {/* Large Cyber Quiz Join Code Display */}
+          <div className="neon-waiting-code-display">
+            <div style={{ textAlign: 'left' }}>
+              <div className="neon-code-label">SHARE CODE WITH PARTICIPANTS:</div>
+              <div className="neon-code-value">{quizData.quizCode || "------"}</div>
+            </div>
+            <button 
+              type="button" 
+              className="neon-btn-primary" 
+              onClick={handleCopyCode}
+              style={{ width: 'auto', padding: '0.85rem 1.8rem', fontSize: '1rem' }}
+            >
+              {copied ? "✓ Copied to Clipboard!" : "Copy Join Code 📋"}
+            </button>
+          </div>
 
-      <div className="waiting-room-settings-card">
-        <h3>Quiz Settings</h3>
-        <div className="settings-grid">
-          <div className="setting-group">
-            <label>Time per Question (seconds):</label>
-            <input 
-              type="number" 
-              min="5" 
-              max="300"
-              value={questionTimeLimit} 
-              onChange={(e) => setQuestionTimeLimit(Number(e.target.value))}
-            />
+          {/* Live Participant Count Pill */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 18px', borderRadius: '9999px', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#38bdf8', fontWeight: 700, fontSize: '0.95rem', margin: '0 auto 1.5rem' }}>
+            <UsersIcon size={18} />
+            <span>{activeParticipants.length} {activeParticipants.length === 1 ? 'Participant' : 'Participants'} Connected</span>
+          </div>
+
+          {/* Participant Avatar Cluster */}
+          <ParticipantAvatarCluster
+            activeParticipants={activeParticipants}
+            quizId={quizId}
+          />
+
+          {/* Quiz Settings */}
+          <div className="neon-settings-box">
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>Countdown Timer</div>
+              <div style={{ fontSize: '0.85rem', color: '#a1a1aa' }}>Seconds allowed per question for all participants</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input 
+                type="number" 
+                min="5" 
+                max="300"
+                className="neon-settings-input"
+                value={questionTimeLimit} 
+                onChange={(e) => setQuestionTimeLimit(Number(e.target.value))}
+              />
+              <span style={{ color: '#c084fc', fontWeight: 700 }}>sec</span>
+            </div>
+          </div>
+
+          {/* Start Quiz Action */}
+          <div style={{ marginTop: '2.5rem' }}>
+            <button
+              type="button"
+              className="neon-btn-primary"
+              onClick={handleStartQuiz}
+              disabled={
+                isStarting ||
+                quizData.status !== "waiting" ||
+                activeParticipants.length === 0
+              }
+              style={{
+                padding: '1.1rem 3rem',
+                fontSize: '1.25rem',
+                maxWidth: '420px',
+                margin: '0 auto',
+              }}
+            >
+              {isStarting
+                ? "Starting Live Session..."
+                : quizData.status === "live"
+                  ? "Quiz is Live (Active)"
+                  : "Launch Live Quiz 🚀"}
+            </button>
+
+            {quizData.status === "waiting" && activeParticipants.length === 0 && (
+              <p style={{ color: '#a1a1aa', marginTop: '1.25rem', fontSize: '0.95rem' }}>
+                Waiting for at least one participant to enter with code <strong style={{ color: '#c084fc' }}>{quizData.quizCode}</strong>...
+              </p>
+            )}
           </div>
         </div>
       </div>
-
-      <div className="waiting-room-actions">
-        <button
-          className={`primary-btn start-quiz-btn ${
-            quizData.status === "live" ? "is-live" : ""
-          }`}
-          onClick={handleStartQuiz}
-          disabled={
-            isStarting ||
-            quizData.status !== "waiting" ||
-            activeParticipants.length === 0
-          }
-          title={
-            activeParticipants.length === 0
-              ? "Waiting for at least one participant to join"
-              : ""
-          }
-        >
-          {isStarting
-            ? "Starting..."
-            : quizData.status === "live"
-              ? "Quiz is Live (Active)"
-              : "Start Quiz"}
-        </button>
-
-        {quizData.status === "waiting" && activeParticipants.length === 0 && (
-          <p className="waiting-participant-hint">
-            Waiting for at least one participant...
-          </p>
-        )}
-      </div>
-
       <Toast message={toastMessage} />
     </div>
   );
 }
+
