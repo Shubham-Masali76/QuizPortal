@@ -65,7 +65,8 @@ export default function LeaderboardView({ participants }) {
         // Current index determines vertical position
         const currentIndex = phase === 3 ? newOrderMap[p.id] : idx;
         const currentScore = phase >= 2 ? p.score : p.oldScore;
-        const widthPct = Math.max(12, (currentScore / maxScore) * 100);
+        // Cap at 58% so the user avatar & name have guaranteed room on the right on all screen sizes
+        const widthPct = Math.max(10, Math.min(58, (currentScore / maxScore) * 58));
         
         return (
           <div 
@@ -89,7 +90,7 @@ export default function LeaderboardView({ participants }) {
               >
                  <div className="neon-leaderboard-user-info">
                     <span style={{ fontSize: '1.45rem', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))' }}>{p.avatar || '👤'}</span>
-                    <span style={{ fontSize: '1.15rem', fontWeight: 800, whiteSpace: 'nowrap', textShadow: '0 2px 4px rgba(0,0,0,0.6)' }}>{p.name}</span>
+                    <span className="neon-leaderboard-name">{p.name}</span>
                  </div>
               </div>
             </div>
