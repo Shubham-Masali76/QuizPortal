@@ -332,7 +332,30 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     }
   };
 
+  const [showEndDialog, setShowEndDialog] = useState(false);
+
+  const confirmEndQuiz = async () => {
+    setShowEndDialog(false);
+    try {
+      await updateDoc(doc(db, "quizzes", quizId), {
+        status: "completed",
+        questionStatus: "closed"
+      });
+      setQuizStatus("leaderboard");
+    } catch (err) {
+      console.error("Error ending quiz early:", err);
+    }
+  };
+
   const handleEndQuiz = async () => {
+    try {
+      await updateDoc(doc(db, "quizzes", quizId), {
+        status: "completed",
+        questionStatus: "closed"
+      });
+    } catch (err) {
+      console.error("Error setting quiz completed:", err);
+    }
     setPage("dashboard");
   };
 
@@ -369,8 +392,18 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
         </div>
       ) : (
         <div className="question-view">
-          <div className="status-badge" style={{ marginBottom: '1rem', fontWeight: 'bold', color: '#666' }}>
-            Question {currentQuestionIndex + 1} of {questions.length}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div className="status-badge" style={{ fontWeight: 'bold', color: '#666' }}>
+              Question {currentQuestionIndex + 1} of {questions.length}
+            </div>
+            <button 
+              type="button"
+              className="delete-question-btn" 
+              onClick={() => setShowEndDialog(true)}
+              style={{ padding: '0.4rem 1.1rem', fontSize: '0.9rem', cursor: 'pointer', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px' }}
+            >
+              End Quiz
+            </button>
           </div>
           
           <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>{currentQuestion.question}</h1>
@@ -461,6 +494,35 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
           
           <div style={{ marginTop: '2rem', color: '#666' }}>
             Responses: {responses.length} / {activeParticipants.length}
+          </div>
+        </div>
+      )}
+
+      {showEndDialog && (
+        <div className="dialog-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div className="dialog-box" style={{ background: '#fff', borderRadius: '14px', padding: '2rem', maxWidth: '420px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
+            <h2 style={{ color: '#111', marginBottom: '0.75rem', fontSize: '1.4rem' }}>End Quiz Now?</h2>
+            <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+              Are you sure you want to end this quiz? This will finalize scores and show the final results to all participants.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="dialog-cancel-btn"
+                onClick={() => setShowEndDialog(false)}
+                style={{ padding: '0.6rem 1.4rem', borderRadius: '8px', border: '1px solid #ccc', background: '#f4f4f5', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="dialog-delete-btn"
+                onClick={confirmEndQuiz}
+                style={{ padding: '0.6rem 1.4rem', borderRadius: '8px', border: 'none', background: '#ef4444', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Yes, End Quiz
+              </button>
+            </div>
           </div>
         </div>
       )}

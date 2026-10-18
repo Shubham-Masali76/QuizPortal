@@ -189,25 +189,25 @@ export const sortQuestions = (list, questionOrder = null) => {
   }
 
   return [...list].sort((a, b) => {
-    // 2. Explicit integer order field
+    // 2. Explicit integer order field (if distinct)
     const hasOrderA = a.order !== undefined && a.order !== null && !isNaN(a.order);
     const hasOrderB = b.order !== undefined && b.order !== null && !isNaN(b.order);
-    if (hasOrderA && hasOrderB) {
-      if (Number(a.order) !== Number(b.order)) return Number(a.order) - Number(b.order);
-    } else if (hasOrderA) {
-      return -1;
-    } else if (hasOrderB) {
-      return 1;
+    if (hasOrderA && hasOrderB && Number(a.order) !== Number(b.order)) {
+      return Number(a.order) - Number(b.order);
     }
 
-    // 3. Creation timestamp
+    // 3. Creation timestamp (chronological insertion order)
     const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : null);
     const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : null);
-    if (timeA !== null && timeB !== null && !isNaN(timeA) && !isNaN(timeB)) {
-      if (timeA !== timeB) return timeA - timeB;
+    if (timeA !== null && timeB !== null && !isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+      return timeA - timeB;
     }
 
-    // 4. Strict leading question number match only (e.g. "1. What", "1 question", "Question 1", "Q1:")
+    // 4. One has order
+    if (hasOrderA) return -1;
+    if (hasOrderB) return 1;
+
+    // 5. Strict leading question number match only (e.g. "1. What", "Question 1", "Q1:")
     const extractLeadNum = (str) => {
       if (!str) return null;
       const trimmed = String(str).trim();
@@ -216,15 +216,13 @@ export const sortQuestions = (list, questionOrder = null) => {
     };
     const numA = extractLeadNum(a.question);
     const numB = extractLeadNum(b.question);
-    if (numA !== null && numB !== null) {
-      if (numA !== numB) return numA - numB;
-    } else if (numA !== null) {
-      return -1;
-    } else if (numB !== null) {
-      return 1;
+    if (numA !== null && numB !== null && numA !== numB) {
+      return numA - numB;
     }
+    if (numA !== null) return -1;
+    if (numB !== null) return 1;
 
-    // 5. Stable deterministic tie-breaker: document ID
+    // 6. Stable deterministic tie-breaker: document ID
     return String(a.id || "").localeCompare(String(b.id || ""));
   });
 };

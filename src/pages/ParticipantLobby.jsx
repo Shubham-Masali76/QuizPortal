@@ -262,7 +262,7 @@ export default function ParticipantLobby({
     );
   }
 
-  if (quizData.status === "live") {
+  if (quizData.status === "live" || quizData.status === "completed") {
     return (
       <ParticipantLiveQuiz 
         quizId={quizId} 
