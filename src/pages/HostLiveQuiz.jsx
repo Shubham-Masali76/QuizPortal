@@ -30,13 +30,17 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     return online.length > 0 ? online : participants;
   }, [participants, presenceMap, responses]);
 
-  const updateQuizState = useCallback(async (index, status, timeLimit = 0) => {
+  const updateQuizState = useCallback(async (index, status, timeLimit = 0, qListOverride = null) => {
     const numIndex = Number(index);
     setCurrentQuestionIndex(numIndex);
     setQuizStatus(status);
     
+    const activeQList = qListOverride || questions;
+    const targetQ = activeQList[numIndex];
+
     const updateData = {
       currentQuestionIndex: numIndex,
+      currentQuestionId: targetQ?.id || null,
       questionStatus: status, // "answering", "results", "question_leaderboard", "closed"
     };
 
@@ -48,7 +52,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
     setQuizData(prev => prev ? { ...prev, ...updateData } : updateData);
     await updateDoc(doc(db, "quizzes", quizId), updateData);
-  }, [quizId]);
+  }, [quizId, questions]);
 
   const handleShowResults = useCallback(async () => {
     if (isTransitioning.current) return;
@@ -60,7 +64,8 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
       // 1. Calculate scores and batch update participants
       if (currentQuestionIndex >= 0 && questions[currentQuestionIndex]) {
-        const currentQuestion = questions[currentQuestionIndex];
+        const currentQuestion = (quizData?.currentQuestionId && questions.find(q => q.id === quizData.currentQuestionId)) 
+          || questions[currentQuestionIndex];
         
         const updates = {};
         // Calculate scores first
@@ -183,7 +188,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
         // Fetch questions
         const qSnap = await getDocs(collection(db, "quizzes", quizId, "questions"));
         const qList = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const sortedQuestions = sortQuestions(qList);
+        const sortedQuestions = sortQuestions(qList, qData.questionOrder);
         setQuestions(sortedQuestions);
 
         if (sortedQuestions.length === 0) {
@@ -202,7 +207,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
         if (isFresh) {
           setTimeLeft(qLimit);
-          await updateQuizState(0, "answering", qLimit);
+          await updateQuizState(0, "answering", qLimit, sortedQuestions);
         } else {
           // Resume quiz state
           const activeIndex = Number(qData.currentQuestionIndex) || 0;
@@ -338,11 +343,13 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     return <div className="host-live-container"><h2>Error: No questions found for this quiz.</h2><button onClick={handleEndQuiz}>Back to Dashboard</button></div>;
   }
 
-  const currentQuestion = questions[currentQuestionIndex] || {
-    question: "Loading question...",
-    options: [],
-    correctAnswer: 1
-  };
+  const currentQuestion = (quizData?.currentQuestionId && questions.find(q => q.id === quizData.currentQuestionId))
+    || questions[currentQuestionIndex] 
+    || {
+      question: "Loading question...",
+      options: [],
+      correctAnswer: 1
+    };
 
   // Calculate stats for results
   const optionCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };

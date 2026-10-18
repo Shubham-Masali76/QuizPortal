@@ -7,12 +7,14 @@ import {
 } from "firebase/database";
 import { rtdb } from "../services/firebase";
 
-export async function submitResponseRTDB(quizId, questionIndex, participantId, optionNumber) {
+export async function submitResponseRTDB(quizId, questionIndex, participantId, optionNumber, questionId = null) {
   const respRef = rtdbRef(rtdb, `responses/${quizId}/${questionIndex}/${participantId}`);
-  await rtdbSet(respRef, {
+  const payload = {
     selectedOption: optionNumber,
     timestamp: Date.now()
-  });
+  };
+  if (questionId) payload.questionId = questionId;
+  await rtdbSet(respRef, payload);
 }
 
 // Deterministic 32-bit FNV-1a hash
@@ -171,33 +173,58 @@ export const sortParticipants = (a, b) => {
   return (a.lastResponseTimeMs || 0) - (b.lastResponseTimeMs || 0);
 };
 
-export const sortQuestions = (list) => {
+export const sortQuestions = (list, questionOrder = null) => {
   if (!Array.isArray(list)) return [];
-  return [...list].sort((a, b) => {
-    // 1. Explicit order field
-    if (a.order !== undefined && b.order !== undefined) {
-      return a.order - b.order;
-    }
-    if (a.order !== undefined) return -1;
-    if (b.order !== undefined) return 1;
+  
+  // 1. If explicit questionOrder ID array is provided from the quiz doc, use it as definitive source of truth
+  if (Array.isArray(questionOrder) && questionOrder.length > 0) {
+    const orderMap = new Map();
+    questionOrder.forEach((id, idx) => orderMap.set(String(id), idx));
+    return [...list].sort((a, b) => {
+      const idxA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
+      const idxB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
+      if (idxA !== idxB) return idxA - idxB;
+      return String(a.id || "").localeCompare(String(b.id || ""));
+    });
+  }
 
-    // 2. Creation timestamp
-    if (a.createdAt && b.createdAt) {
-      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt).getTime();
-      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt).getTime();
+  return [...list].sort((a, b) => {
+    // 2. Explicit integer order field
+    const hasOrderA = a.order !== undefined && a.order !== null && !isNaN(a.order);
+    const hasOrderB = b.order !== undefined && b.order !== null && !isNaN(b.order);
+    if (hasOrderA && hasOrderB) {
+      if (Number(a.order) !== Number(b.order)) return Number(a.order) - Number(b.order);
+    } else if (hasOrderA) {
+      return -1;
+    } else if (hasOrderB) {
+      return 1;
+    }
+
+    // 3. Creation timestamp
+    const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : null);
+    const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt ? new Date(b.createdAt).getTime() : null);
+    if (timeA !== null && timeB !== null && !isNaN(timeA) && !isNaN(timeB)) {
       if (timeA !== timeB) return timeA - timeB;
     }
 
-    // 3. Fallback: extract leading or embedded question number (e.g. "1 question", "Question 1", "1.")
-    const matchA = (a.question || "").match(/(\d+)/);
-    const matchB = (b.question || "").match(/(\d+)/);
-    if (matchA && matchB) {
-      const numA = parseInt(matchA[1], 10);
-      const numB = parseInt(matchB[1], 10);
+    // 4. Strict leading question number match only (e.g. "1. What", "1 question", "Question 1", "Q1:")
+    const extractLeadNum = (str) => {
+      if (!str) return null;
+      const trimmed = String(str).trim();
+      const m = trimmed.match(/^(?:question\s*|q\s*)?(\d+)(?:[.:\-)\s]|$)/i);
+      return m ? parseInt(m[1], 10) : null;
+    };
+    const numA = extractLeadNum(a.question);
+    const numB = extractLeadNum(b.question);
+    if (numA !== null && numB !== null) {
       if (numA !== numB) return numA - numB;
+    } else if (numA !== null) {
+      return -1;
+    } else if (numB !== null) {
+      return 1;
     }
 
-    // 4. Stable fallback by id
+    // 5. Stable deterministic tie-breaker: document ID
     return String(a.id || "").localeCompare(String(b.id || ""));
   });
 };

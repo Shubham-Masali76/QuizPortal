@@ -4,6 +4,7 @@ import { ref as rtdbRef, onValue as rtdbOnValue, remove as rtdbRemove } from "fi
 import { db, rtdb } from "../services/firebase";
 import ParticipantAvatarCluster from "../components/ParticipantAvatarCluster";
 import Toast from "../components/Toast";
+import { sortQuestions } from "../utils/helpers";
 
 export default function HostWaitingRoom({
   quizId,
@@ -149,9 +150,32 @@ export default function HostWaitingRoom({
     setIsStarting(true);
     try {
       const timeLimit = questionTimeLimit || 20;
+
+      // Fetch questions and establish definitive questionOrder and order index
+      const qSnap = await getDocs(collection(db, "quizzes", quizId, "questions"));
+      const qList = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const sortedQuestions = sortQuestions(qList, quizData?.questionOrder);
+      const questionOrder = sortedQuestions.map(q => q.id);
+      const firstQId = sortedQuestions[0]?.id || null;
+
+      // Ensure every question has order field in Firestore
+      const qBatch = writeBatch(db);
+      let needsQUpdate = false;
+      sortedQuestions.forEach((q, idx) => {
+        if (q.order !== idx) {
+          needsQUpdate = true;
+          qBatch.update(doc(db, "quizzes", quizId, "questions", q.id), { order: idx });
+        }
+      });
+      if (needsQUpdate) {
+        await qBatch.commit();
+      }
+
       await updateDoc(doc(db, "quizzes", quizId), {
         status: "live",
         currentQuestionIndex: 0,
+        currentQuestionId: firstQId,
+        questionOrder: questionOrder,
         questionStatus: "answering",
         phaseEndTime: Date.now() + (timeLimit * 1000),
         questionTimeLimit: timeLimit,

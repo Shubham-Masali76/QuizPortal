@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { doc, onSnapshot, collection, getDocs, getDoc } from "firebase/firestore";
 import { ref as rtdbRef, onValue as rtdbOnValue, set as rtdbSet, onDisconnect as rtdbOnDisconnect } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
@@ -12,9 +12,11 @@ import {
 import NeonBackground from "../components/NeonBackground";
 
 export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: initialTitle, onLeave }) {
-  const [questions, setQuestions] = useState([]);
+  const [rawQuestions, setRawQuestions] = useState([]);
   const [quizState, setQuizState] = useState({
     currentQuestionIndex: 0,
+    currentQuestionId: null,
+    questionOrder: null,
     questionStatus: "loading", // answering, results, question_leaderboard, closed
     status: "live",
   });
@@ -22,6 +24,10 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
     title: initialTitle || "Knowledge Quiz",
     questionTimeLimit: 20,
   });
+
+  const questions = useMemo(() => {
+    return sortQuestions(rawQuestions, quizState.questionOrder);
+  }, [rawQuestions, quizState.questionOrder]);
   const [selectedOption, setSelectedOption] = useState(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -60,6 +66,9 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
         const qDoc = await getDoc(doc(db, "quizzes", quizId));
         if (qDoc.exists()) {
           const d = qDoc.data();
+          if (d.questionOrder) {
+            setQuizState(prev => ({ ...prev, questionOrder: d.questionOrder }));
+          }
           setQuizInfo({
             title: d.title || initialTitle || "Knowledge Quiz",
             questionTimeLimit: d.questionTimeLimit || d.answeringTimeLimit || 20,
@@ -68,7 +77,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
 
         const qSnap = await getDocs(collection(db, "quizzes", quizId, "questions"));
         const qList = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setQuestions(sortQuestions(qList));
+        setRawQuestions(qList);
       } catch (err) {
         console.error("Error fetching quiz questions:", err);
       }
@@ -110,6 +119,8 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
         const data = docSnap.data();
         setQuizState({
           currentQuestionIndex: data.currentQuestionIndex || 0,
+          currentQuestionId: data.currentQuestionId || null,
+          questionOrder: data.questionOrder || null,
           questionStatus: data.questionStatus || "answering",
           status: data.status,
           phaseEndTime: data.phaseEndTime || null,
@@ -133,7 +144,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
     if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
       document.activeElement.blur();
     }
-  }, [quizState.currentQuestionIndex]);
+  }, [quizState.currentQuestionIndex, quizState.currentQuestionId]);
 
   const handleSelectOption = async (optionIndex) => {
     if (hasSubmitted || quizState.questionStatus !== "answering") return;
@@ -144,7 +155,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
     const optionNumber = optionIndex + 1;
 
     try {
-      await submitResponseRTDB(quizId, quizState.currentQuestionIndex, participantId, optionNumber);
+      await submitResponseRTDB(quizId, quizState.currentQuestionIndex, participantId, optionNumber, currentQuestion?.id);
     } catch (err) {
       console.error("Error saving response:", err);
       setSelectedOption(null);
@@ -213,7 +224,9 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
     );
   }
 
-  const currentQuestion = questions[quizState.currentQuestionIndex];
+  const currentQuestion = (quizState?.currentQuestionId && questions.find(q => q.id === quizState.currentQuestionId)) 
+    || questions[quizState.currentQuestionIndex] 
+    || null;
   const isResultsPhase = quizState.questionStatus === "results";
   const correctAnswerIndex = (currentQuestion?.correctAnswer || 1) - 1;
 
@@ -318,7 +331,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
 
               return (
                 <button
-                  key={`${quizState.currentQuestionIndex}-${idx}`}
+                  key={`${currentQuestion?.id || quizState.currentQuestionIndex}-${idx}`}
                   type="button"
                   className={optionClasses}
                   onClick={() => handleSelectOption(idx)}

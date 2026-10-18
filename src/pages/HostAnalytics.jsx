@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { ref as rtdbRef, remove as rtdbRemove } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import { sortParticipants, sortQuestions } from "../utils/helpers";
@@ -16,16 +16,20 @@ export default function HostAnalytics({ quizId, setPage }) {
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
-        // Fetch participants
-        const pSnap = await getDocs(collection(db, "quizzes", quizId, "participants"));
+        // Fetch quiz, participants and questions concurrently
+        const [qzSnap, qSnap, pSnap] = await Promise.all([
+          getDoc(doc(db, "quizzes", quizId)),
+          getDocs(collection(db, "quizzes", quizId, "questions")),
+          getDocs(collection(db, "quizzes", quizId, "participants")),
+        ]);
+
+        const qOrder = qzSnap.exists() ? qzSnap.data().questionOrder : null;
         const pList = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         pList.sort(sortParticipants);
         setParticipants(pList);
 
-        // Fetch questions
-        const qSnap = await getDocs(collection(db, "quizzes", quizId, "questions"));
         const qList = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setQuestions(sortQuestions(qList));
+        setQuestions(sortQuestions(qList, qOrder));
 
         // No need to fetch responses from Firestore anymore, we can aggregate from participants directly!
       } catch (err) {

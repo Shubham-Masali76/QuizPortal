@@ -431,16 +431,18 @@ function App() {
 
   const fetchQuestions = async (id) => {
     try {
-      const querySnapshot = await getDocs(
-        collection(db, "quizzes", id, "questions"),
-      );
+      const [qzSnap, querySnapshot] = await Promise.all([
+        getDoc(doc(db, "quizzes", id)),
+        getDocs(collection(db, "quizzes", id, "questions")),
+      ]);
 
+      const qOrder = qzSnap.exists() ? qzSnap.data().questionOrder : null;
       const questionList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
 
-      setQuestions(sortQuestions(questionList));
+      setQuestions(sortQuestions(questionList, qOrder));
     } catch (error) {
       console.error("Error fetching questions:", error);
       setMessage("Something went wrong while fetching the questions!");
