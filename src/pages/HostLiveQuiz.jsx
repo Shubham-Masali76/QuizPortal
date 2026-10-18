@@ -535,10 +535,12 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
                 <span className="neon-q-pill">
                   QUESTION {currentQuestionIndex + 1} OF {questions.length}
                 </span>
-                <span className="neon-q-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <UsersIcon size={16} />
-                  <span>{responses.length} / {activeParticipants.length} Answered</span>
-                </span>
+                {quizStatus === "answering" && (
+                  <span className="neon-q-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <UsersIcon size={16} />
+                    <span>{responses.length} / {activeParticipants.length} Answered</span>
+                  </span>
+                )}
               </>
             )}
             <button 
@@ -625,10 +627,12 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
               </div>
             )}
 
-            {/* Question Text */}
-            <h1 className="neon-host-question-title">
-              {currentQuestion.question}
-            </h1>
+            {/* Question Text (Visible during answering and results) */}
+            {(quizStatus === "answering" || quizStatus === "results") && (
+              <h1 className="neon-host-question-title">
+                {currentQuestion.question}
+              </h1>
+            )}
 
             {/* Answering Phase: 2x2 Option Grid */}
             {quizStatus === "answering" && (
@@ -713,12 +717,17 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
             {/* Question Leaderboard Phase */}
             {quizStatus === "question_leaderboard" && (
-              <div style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '1.5rem' }}>
-                  <TrophyIcon size={24} color="#ffd700" />
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                    CURRENT STANDINGS
-                  </h3>
+              <div className="neon-host-standings-stage">
+                <div className="neon-host-standings-header">
+                  <div className="neon-trophy-badge">
+                    <TrophyIcon size={26} color="#ffd700" />
+                  </div>
+                  <div className="neon-host-standings-titles">
+                    <h2 className="neon-host-standings-title">CURRENT STANDINGS</h2>
+                    <p className="neon-host-standings-subtitle">
+                      Question {currentQuestionIndex + 1} of {questions.length} • Live Scoreboard
+                    </p>
+                  </div>
                 </div>
                 <LeaderboardView participants={activeParticipants} />
               </div>

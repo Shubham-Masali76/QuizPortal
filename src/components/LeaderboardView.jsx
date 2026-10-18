@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { sortParticipants } from "../utils/helpers";
 
-export default function LeaderboardView({ participants }) {
+export default function LeaderboardView({ participants = [] }) {
   const [phase, setPhase] = useState(0); 
-  // Phase 0: Show old scores + points on the right
-  // Phase 1: Animate points moving left
-  // Phase 2: Points merged, update numbers
-  // Phase 3: Rearrange rows
+  // Phase 0: Show pre-question scores + earned points badge
+  // Phase 1: Animate / pulse points merge
+  // Phase 2: Points merged into total score & progress bar expands
+  // Phase 3: Smoothly reorder rows to new standings
 
   const [topParticipants] = useState(() => {
-    const initialList = participants.map(p => {
+    const list = (participants || []).map(p => {
       const earned = p.lastPointsEarned || 0;
       const oldScore = (p.score || 0) - earned;
       return {
@@ -18,16 +18,16 @@ export default function LeaderboardView({ participants }) {
         earned
       };
     });
-    // Temporary sort by oldScore for phase 0 (before points are merged)
-    initialList.sort((a, b) => b.oldScore - a.oldScore);
-    return initialList.slice(0, 10);
+    // Initial sort by oldScore prior to merging new points
+    list.sort((a, b) => (b.oldScore || 0) - (a.oldScore || 0));
+    return list.slice(0, 10);
   });
 
   useEffect(() => {
-    // Start animation sequence
-    const t1 = setTimeout(() => setPhase(1), 1500); // hold +points on right
-    const t2 = setTimeout(() => setPhase(2), 3000); // slide points and merge
-    const t3 = setTimeout(() => setPhase(3), 4500); // reorder rows
+    // Timed choreography for scoreboard reveal
+    const t1 = setTimeout(() => setPhase(1), 1200); // Pulse earned points
+    const t2 = setTimeout(() => setPhase(2), 2400); // Merge points into score
+    const t3 = setTimeout(() => setPhase(3), 3800); // Reorder rows
 
     return () => {
       clearTimeout(t1);
@@ -36,7 +36,7 @@ export default function LeaderboardView({ participants }) {
     };
   }, []);
 
-  // For phase 3, we need to know the new order.
+  // For phase 3, compute the new rank order
   const newOrderMap = {};
   if (phase === 3) {
     const sortedByNew = [...topParticipants].sort(sortParticipants);
@@ -45,72 +45,100 @@ export default function LeaderboardView({ participants }) {
     });
   }
 
-  const maxScore = topParticipants.reduce((max, p) => Math.max(max, p.score || 1), 1);
+  // Find maximum score across all participants in this phase to scale progress bars
+  const maxScore = topParticipants.reduce((max, p) => {
+    const s = phase >= 2 ? (p.score || 0) : (p.oldScore || 0);
+    return Math.max(max, s);
+  }, 0);
+
   const gradients = [
-    'linear-gradient(90deg, #7c3aed, #c084fc)',
-    'linear-gradient(90deg, #0284c7, #38bdf8)',
-    'linear-gradient(90deg, #059669, #34d399)',
-    'linear-gradient(90deg, #d97706, #fbbf24)',
-    'linear-gradient(90deg, #e11d48, #fb7185)',
-    'linear-gradient(90deg, #4f46e5, #818cf8)',
-    'linear-gradient(90deg, #0891b2, #22d3ee)',
-    'linear-gradient(90deg, #9333ea, #e879f9)',
-    'linear-gradient(90deg, #c026d3, #f472b6)',
-    'linear-gradient(90deg, #2563eb, #60a5fa)',
+    'linear-gradient(90deg, rgba(168, 85, 247, 0.45) 0%, rgba(216, 180, 254, 0.75) 100%)', // Purple
+    'linear-gradient(90deg, rgba(14, 165, 233, 0.45) 0%, rgba(56, 189, 248, 0.75) 100%)', // Sky
+    'linear-gradient(90deg, rgba(16, 185, 129, 0.45) 0%, rgba(52, 211, 153, 0.75) 100%)', // Emerald
+    'linear-gradient(90deg, rgba(245, 158, 11, 0.45) 0%, rgba(251, 191, 36, 0.75) 100%)', // Amber
+    'linear-gradient(90deg, rgba(244, 63, 94, 0.45) 0%, rgba(251, 113, 133, 0.75) 100%)', // Rose
+    'linear-gradient(90deg, rgba(99, 102, 241, 0.45) 0%, rgba(129, 140, 248, 0.75) 100%)', // Indigo
+    'linear-gradient(90deg, rgba(6, 182, 212, 0.45) 0%, rgba(34, 211, 238, 0.75) 100%)', // Cyan
+    'linear-gradient(90deg, rgba(217, 70, 239, 0.45) 0%, rgba(232, 121, 249, 0.75) 100%)', // Fuchsia
+    'linear-gradient(90deg, rgba(34, 197, 94, 0.45) 0%, rgba(74, 222, 128, 0.75) 100%)', // Green
+    'linear-gradient(90deg, rgba(59, 130, 246, 0.45) 0%, rgba(96, 165, 250, 0.75) 100%)', // Blue
   ];
 
+  if (!topParticipants.length) {
+    return (
+      <div className="neon-lb-empty">
+        <p>No participants in this session yet.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="neon-leaderboard-track" style={{ height: `${topParticipants.length * 58}px` }}>
+    <div 
+      className="neon-leaderboard-track" 
+      style={{ height: `calc(${topParticipants.length} * var(--lb-row-height, 64px))` }}
+    >
       {topParticipants.map((p, idx) => {
-        // Current index determines vertical position
-        const currentIndex = phase === 3 ? newOrderMap[p.id] : idx;
-        const currentScore = phase >= 2 ? p.score : p.oldScore;
-        // Cap at 58% so the user avatar & name have guaranteed room on the right on all screen sizes
-        const widthPct = Math.max(10, Math.min(58, (currentScore / maxScore) * 58));
+        const currentIndex = phase === 3 ? (newOrderMap[p.id] ?? idx) : idx;
+        const currentScore = phase >= 2 ? (p.score || 0) : (p.oldScore || 0);
         
+        // Scale proportional width (0% if maxScore is 0)
+        const widthPct = maxScore > 0 
+          ? Math.max(0, Math.min(100, Math.round((currentScore / maxScore) * 100))) 
+          : 0;
+
+        const isRank1 = currentIndex === 0;
+        const isRank2 = currentIndex === 1;
+        const isRank3 = currentIndex === 2;
+        const rankClass = isRank1 ? 'rank-gold' : isRank2 ? 'rank-silver' : isRank3 ? 'rank-bronze' : '';
+
         return (
           <div 
             key={p.id} 
             className="neon-leaderboard-row"
             style={{ 
-              top: `${currentIndex * 58}px`,
+              '--current-index': currentIndex,
             }}
           >
-            <div className="neon-leaderboard-score-tag">
-              {currentScore || 0} <span style={{ fontSize: '0.85rem', color: '#c084fc' }}>pts</span>
-            </div>
-            
-            <div className="neon-leaderboard-bar-slot">
+            <div className={`neon-lb-card ${rankClass}`}>
+              {/* Dynamic glowing progress bar filling behind row content */}
               <div 
-                className="neon-leaderboard-bar-fill"
+                className="neon-lb-progress-fill"
                 style={{ 
-                  width: `${widthPct}%`, 
-                  background: gradients[currentIndex % gradients.length], 
+                  width: `${widthPct}%`,
+                  background: gradients[currentIndex % gradients.length]
                 }}
-              >
-                 <div className="neon-leaderboard-user-info">
-                    <span style={{ fontSize: '1.45rem', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))' }}>{p.avatar || '👤'}</span>
-                    <span className="neon-leaderboard-name">{p.name}</span>
-                 </div>
-              </div>
-            </div>
+              />
 
-            {/* Flying Points Animation */}
-            {p.earned > 0 && phase < 2 && (
-              <div 
-                className="neon-flying-points"
-                style={{ 
-                  right: phase === 1 ? 'calc(100% - 110px)' : '25px', 
-                  opacity: 1,
-                }}
-              >
-                +{p.earned}
+              {/* Structured Inner Content (Never overflows or detaches) */}
+              <div className="neon-lb-row-inner">
+                {/* Rank Badge */}
+                <div className={`neon-lb-rank-badge ${rankClass}`}>
+                  #{currentIndex + 1}
+                </div>
+
+                {/* Avatar and Name */}
+                <div className="neon-lb-user-group">
+                  <span className="neon-lb-avatar">{p.avatar || '👤'}</span>
+                  <span className="neon-lb-name" title={p.name}>{p.name}</span>
+                </div>
+
+                {/* Score Section */}
+                <div className="neon-lb-score-group">
+                  {p.earned > 0 && phase < 2 && (
+                    <span className={`neon-lb-earned-pill ${phase === 1 ? 'merging' : ''}`}>
+                      +{p.earned}
+                    </span>
+                  )}
+                  <div className="neon-lb-score-val">
+                    <span className="neon-lb-points-num">{currentScore.toLocaleString()}</span>
+                    <span className="neon-lb-points-label">pts</span>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         );
       })}
     </div>
   );
 }
-
