@@ -196,12 +196,18 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
           return;
         }
 
+        // If the quiz was already completed, do NOT restart it — show the final podium
+        if (qData.status === "completed" || qData.status === "finished") {
+          setCurrentQuestionIndex(Math.max(0, sortedQuestions.length - 1));
+          setQuizStatus("leaderboard");
+          return;
+        }
+
         const qLimit = qData.questionTimeLimit || qData.answeringTimeLimit || 20;
 
         // If the quiz is starting fresh or has uninitialized state:
-        const isFresh = !qData.questionStatus ||
-                        qData.questionStatus === "closed" ||
-                        qData.questionStatus === "reading" ||
+        const isFresh = !qData.status ||
+                        qData.status === "waiting" ||
                         qData.currentQuestionIndex === undefined ||
                         qData.currentQuestionIndex === null;
 
@@ -228,7 +234,8 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     };
     
     fetchInitialData();
-  }, [quizId, updateQuizState]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quizId]);
 
   // Listen to participants for live leaderboard updates
   useEffect(() => {
@@ -322,8 +329,13 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
         setResponses([]);
         await updateQuizState(nextIndex, "answering", qLimit);
       } else {
+        await updateDoc(doc(db, "quizzes", quizId), { 
+          status: "completed", 
+          questionStatus: "closed",
+          phaseEndTime: null,
+        });
+        setQuizData(prev => prev ? { ...prev, status: "completed", questionStatus: "closed", phaseEndTime: null } : { status: "completed", questionStatus: "closed" });
         setQuizStatus("leaderboard");
-        await updateDoc(doc(db, "quizzes", quizId), { status: "completed", questionStatus: "closed" });
       }
     } catch (err) {
       console.error("Error progressing to next question:", err);
@@ -336,14 +348,95 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
   const confirmEndQuiz = async () => {
     setShowEndDialog(false);
+    if (isTransitioning.current) return;
+    isTransitioning.current = true;
+
     try {
+      // If currently answering, compute scores for this question so participants get credit
+      if (quizStatus === "answering" && currentQuestionIndex >= 0 && questions[currentQuestionIndex]) {
+        try {
+          const currentQuestion = (quizData?.currentQuestionId && questions.find(q => q.id === quizData.currentQuestionId)) 
+            || questions[currentQuestionIndex];
+          
+          const updates = {};
+          activeParticipants.forEach(p => {
+            updates[p.id] = { ...p, lastPointsEarned: 0 };
+          });
+
+          const maxTime = quizData?.questionTimeLimit || quizData?.answeringTimeLimit || 20;
+          const phaseEnd = currentPhaseEndTime.current || quizData?.phaseEndTime || Date.now();
+
+          responses.forEach(resp => {
+            if (!updates[resp.participantId]) return;
+            let pointsEarned = 0;
+            let timeTakenMs = resp.timestamp - (phaseEnd - (maxTime * 1000));
+            timeTakenMs = Math.max(0, Math.min(timeTakenMs, maxTime * 1000));
+            const timeTakenSec = timeTakenMs / 1000;
+            updates[resp.participantId].lastResponseTimeMs = timeTakenMs;
+
+            if (resp.selectedOption === currentQuestion.correctAnswer) {
+              const speedMultiplier = Math.max(0, 1 - (timeTakenSec / maxTime));
+              pointsEarned = 500 + Math.round(500 * speedMultiplier);
+              updates[resp.participantId].correctAnswersCount = (updates[resp.participantId].correctAnswersCount || 0) + 1;
+            }
+            updates[resp.participantId].lastPointsEarned = pointsEarned;
+            updates[resp.participantId].score = (updates[resp.participantId].score || 0) + pointsEarned;
+            updates[resp.participantId].totalResponseTimeMs = (updates[resp.participantId].totalResponseTimeMs || 0) + timeTakenMs;
+          });
+
+          const updatedParticipantsArray = Object.values(updates);
+          updatedParticipantsArray.sort((a, b) => {
+            if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+            if ((b.correctAnswersCount || 0) !== (a.correctAnswersCount || 0)) return (b.correctAnswersCount || 0) - (a.correctAnswersCount || 0);
+            if ((a.totalResponseTimeMs || 0) !== (b.totalResponseTimeMs || 0)) return (a.totalResponseTimeMs || 0) - (b.totalResponseTimeMs || 0);
+            return (a.lastResponseTimeMs || 0) - (b.lastResponseTimeMs || 0);
+          });
+
+          updatedParticipantsArray.forEach((p, index) => {
+            updates[p.id].rank = index + 1;
+          });
+
+          const chunkedBatches = [];
+          let currentBatch = writeBatch(db);
+          let opCount = 0;
+          Object.keys(updates).forEach(pid => {
+            if (opCount >= 490) {
+              chunkedBatches.push(currentBatch);
+              currentBatch = writeBatch(db);
+              opCount = 0;
+            }
+            const pRef = doc(db, "quizzes", quizId, "participants", pid);
+            currentBatch.update(pRef, {
+              lastPointsEarned: updates[pid].lastPointsEarned || 0,
+              score: updates[pid].score || 0,
+              rank: updates[pid].rank || 1,
+              correctAnswersCount: updates[pid].correctAnswersCount || 0,
+              totalResponseTimeMs: updates[pid].totalResponseTimeMs || 0,
+              lastResponseTimeMs: updates[pid].lastResponseTimeMs || 0,
+            });
+            opCount++;
+          });
+          if (opCount > 0) chunkedBatches.push(currentBatch);
+          for (const b of chunkedBatches) {
+            await b.commit();
+          }
+        } catch (scoreErr) {
+          console.warn("Could not calculate final question scores on early end quiz:", scoreErr);
+        }
+      }
+
       await updateDoc(doc(db, "quizzes", quizId), {
         status: "completed",
-        questionStatus: "closed"
+        questionStatus: "closed",
+        phaseEndTime: null,
       });
+
+      setQuizData(prev => prev ? { ...prev, status: "completed", questionStatus: "closed", phaseEndTime: null } : { status: "completed", questionStatus: "closed" });
       setQuizStatus("leaderboard");
     } catch (err) {
       console.error("Error ending quiz early:", err);
+    } finally {
+      isTransitioning.current = false;
     }
   };
 
@@ -351,7 +444,8 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     try {
       await updateDoc(doc(db, "quizzes", quizId), {
         status: "completed",
-        questionStatus: "closed"
+        questionStatus: "closed",
+        phaseEndTime: null,
       });
     } catch (err) {
       console.error("Error setting quiz completed:", err);
@@ -386,9 +480,35 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
       
       {quizStatus === "leaderboard" ? (
         <div className="leaderboard-view">
-          <h2 style={{ fontSize: '3rem', margin: '2rem 0', color: '#ffca3a', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>Final Podium</h2>
+          <div style={{ display: 'inline-block', padding: '0.4rem 1.2rem', borderRadius: '20px', background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '1rem' }}>
+            ✓ Quiz Completed
+          </div>
+          <h2 style={{ fontSize: '3rem', margin: '0.5rem 0 2rem 0', color: '#ffca3a', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>Final Podium</h2>
           <PodiumView participants={activeParticipants} />
-          <button className="primary-btn" onClick={handleEndQuiz} style={{ marginTop: '3rem', padding: '1rem 3rem', fontSize: '1.5rem' }}>Finish Quiz</button>
+          {activeParticipants.length === 0 && (
+            <p style={{ color: '#888', marginTop: '1.5rem', fontSize: '1.1rem' }}>
+              No active participants submitted answers in this session.
+            </p>
+          )}
+          <div style={{ marginTop: '3.5rem', display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button 
+              type="button"
+              className="primary-btn" 
+              onClick={() => setPage("analytics")} 
+              style={{ padding: '0.9rem 2.5rem', fontSize: '1.2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+            >
+              <span>View Analytics & Reports</span>
+              <span>→</span>
+            </button>
+            <button 
+              type="button"
+              className="secondary-btn" 
+              onClick={handleEndQuiz} 
+              style={{ padding: '0.9rem 2rem', fontSize: '1.2rem', cursor: 'pointer' }}
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       ) : (
         <div className="question-view">

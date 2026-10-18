@@ -1106,9 +1106,10 @@ button:hover {
   color: #166534;
 }
 
-.quiz-status.finished {
-  background: #e5e7eb;
-  color: #374151;
+.quiz-status.finished,
+.quiz-status.completed {
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 /* =========================

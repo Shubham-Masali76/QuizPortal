@@ -925,8 +925,8 @@ function App() {
                             ? "Waiting"
                             : quiz.status === "live"
                               ? "Live"
-                              : quiz.status === "finished"
-                                ? "Finished"
+                              : quiz.status === "finished" || quiz.status === "completed"
+                                ? "Completed"
                                 : "Draft"}
                         </span>
                       </div>
