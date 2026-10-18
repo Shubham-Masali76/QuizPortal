@@ -131,47 +131,52 @@ export default function HostAnalytics({ quizId, setPage }) {
   const COLORS = ['#4ade80', '#ff595e'];
 
   return (
-    <div className="analytics-page" style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Quiz Analytics</h1>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="primary-btn" style={{ background: '#ff595e' }} onClick={handleExportAndReset}>
-            Export & Reset Quiz
+    <div className="neon-analytics-container">
+      <div className="neon-dash-header">
+        <div className="neon-dash-titles">
+          <span className="neon-badge-pulse">● SESSION REPORT</span>
+          <h1 className="neon-dash-title">Quiz Analytics & Rankings</h1>
+          <p className="neon-dash-sub">Post-game participant scores, accuracy distribution, and speed metrics.</p>
+        </div>
+        <div className="neon-analytics-header-actions">
+          <button type="button" className="neon-btn-danger" onClick={handleExportAndReset}>
+            <span>📥 Export & Reset Quiz</span>
           </button>
-          <button className="secondary-btn" onClick={() => setPage("quizzes")}>← Back to Quizzes</button>
+          <button type="button" className="neon-btn-ghost" onClick={() => setPage("quizzes")}>
+            ← Back to Quizzes
+          </button>
         </div>
       </div>
       
       {/* Charts Row */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginBottom: '3rem' }}>
-        
-        <div style={{ flex: '1 1 500px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: '#333' }}>Participant Scores (Bar Chart)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={scoreData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: '#666' }} />
-              <YAxis tick={{ fill: '#666' }} />
+      <div className="neon-analytics-charts-row">
+        <div className="neon-card neon-analytics-chart-card">
+          <h3 className="neon-chart-title">Participant Scores (Top Performers)</h3>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={scoreData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(168, 85, 247, 0.15)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#c084fc', fontSize: 12 }} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
               <Tooltip 
                 formatter={(value, name, props) => [`${value} pts`, `Rank #${props.payload.rank}`]}
-                labelStyle={{ fontWeight: 'bold', color: '#333' }}
+                contentStyle={{ background: '#120b24', borderColor: '#a855f7', borderRadius: '10px', color: '#fff' }}
               />
-              <Bar dataKey="score" fill="#3a86ff" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="score" fill="#a855f7" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div style={{ flex: '1 1 300px', background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ textAlign: 'center', marginBottom: '1rem', color: '#333' }}>Overall Accuracy (Donut Chart)</h3>
+        <div className="neon-card neon-analytics-chart-card">
+          <h3 className="neon-chart-title">Overall Accuracy</h3>
           {totalCorrect + totalIncorrect > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
                   data={accuracyData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={70}
-                  outerRadius={100}
+                  innerRadius={65}
+                  outerRadius={95}
                   paddingAngle={5}
                   dataKey="value"
                 >
@@ -179,56 +184,59 @@ export default function HostAnalytics({ quizId, setPage }) {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend verticalAlign="bottom" height={36} />
+                <Tooltip 
+                  contentStyle={{ background: '#120b24', borderColor: '#a855f7', borderRadius: '10px', color: '#fff' }}
+                />
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ color: '#cbd5e1' }} />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-             <p style={{ textAlign: 'center', color: '#999', marginTop: '5rem' }}>No responses recorded yet.</p>
+            <p className="neon-empty-chart-text">No responses recorded yet.</p>
           )}
         </div>
-
       </div>
 
       {/* Detailed Table */}
-      <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-        <h3 style={{ marginBottom: '1rem', color: '#333' }}>Detailed Participant Rankings</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #eee', color: '#666' }}>
-              <th style={{ padding: '1rem 0.5rem' }}>Rank</th>
-              <th style={{ padding: '1rem 0.5rem' }}>Name</th>
-              <th style={{ padding: '1rem 0.5rem' }}>Total Score</th>
-              <th style={{ padding: '1rem 0.5rem' }}>Correct Answers</th>
-              <th style={{ padding: '1rem 0.5rem' }}>Avg Speed (s)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {participants.map((p, idx) => {
-               // Calculate average speed
-               let avgSpeed = 0;
-               if (p.correctAnswersCount > 0 && p.totalResponseTimeMs) {
-                 avgSpeed = (p.totalResponseTimeMs / p.correctAnswersCount / 1000).toFixed(2);
-               } else if (p.totalResponseTimeMs) {
-                 avgSpeed = (p.totalResponseTimeMs / 1000).toFixed(2);
-               }
-               return (
-                <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '1rem 0.5rem', fontWeight: 'bold', color: '#3a86ff' }}>#{idx + 1}</td>
-                  <td style={{ padding: '1rem 0.5rem', fontWeight: 'bold' }}>{p.name}</td>
-                  <td style={{ padding: '1rem 0.5rem' }}>{p.score || 0}</td>
-                  <td style={{ padding: '1rem 0.5rem' }}>{p.correctAnswersCount || 0}</td>
-                  <td style={{ padding: '1rem 0.5rem' }}>{avgSpeed > 0 ? `${avgSpeed}s` : '-'}</td>
+      <div className="neon-card neon-analytics-table-card">
+        <h3 className="neon-chart-title" style={{ textAlign: 'left', marginBottom: '1.25rem' }}>Detailed Participant Standings</h3>
+        <div className="neon-table-responsive-wrapper">
+          <table className="neon-analytics-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Participant</th>
+                <th>Total Score</th>
+                <th>Correct Answers</th>
+                <th>Avg Speed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {participants.map((p, idx) => {
+                let avgSpeed = 0;
+                if (p.correctAnswersCount > 0 && p.totalResponseTimeMs) {
+                  avgSpeed = (p.totalResponseTimeMs / p.correctAnswersCount / 1000).toFixed(2);
+                } else if (p.totalResponseTimeMs) {
+                  avgSpeed = (p.totalResponseTimeMs / 1000).toFixed(2);
+                }
+                return (
+                  <tr key={p.id}>
+                    <td className="neon-rank-cell">#{idx + 1}</td>
+                    <td className="neon-name-cell">{p.name}</td>
+                    <td className="neon-score-cell">{p.score || 0}</td>
+                    <td className="neon-correct-cell">{p.correctAnswersCount || 0}</td>
+                    <td className="neon-speed-cell">{avgSpeed > 0 ? `${avgSpeed}s` : '-'}</td>
+                  </tr>
+                );
+              })}
+              {participants.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="neon-no-data-cell">No participants found in this session.</td>
                 </tr>
-              );
-            })}
-            {participants.length === 0 && (
-              <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>No participants found.</td></tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-
     </div>
   );
 }

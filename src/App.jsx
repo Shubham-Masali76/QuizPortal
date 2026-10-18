@@ -620,31 +620,39 @@ function App() {
         handleMyQuizzes={handleMyQuizzes}
         handleLogout={handleLogout}
       >
-        <div className="page-header">
-          <div>
-            <h1>Dashboard</h1>
-            <p>Manage your quizzes and create new challenges.</p>
+        <div className="neon-dash-header">
+          <div className="neon-dash-titles">
+            <span className="neon-badge-pulse">● HOST OPERATING SYSTEM</span>
+            <h1 className="neon-dash-title">Command Dashboard</h1>
+            <p className="neon-dash-sub">Manage your active quizzes and launch new live challenges.</p>
           </div>
 
-          <button className="primary-btn" onClick={() => setPage("create")}>
-            + Create Quiz
+          <button type="button" className="neon-btn-primary neon-dash-create-btn" onClick={() => setPage("create")}>
+            <span className="neon-btn-icon">+</span>
+            <span>Create Quiz</span>
           </button>
         </div>
 
-        <div className="dashboard-actions">
-          <div className="dashboard-action-card" onClick={handleMyQuizzes}>
-            <h3>My Quizzes</h3>
-            <p>View and continue editing your existing quizzes.</p>
-            <span>View quizzes →</span>
+        <div className="neon-dash-actions">
+          <div className="neon-card neon-dash-action-card" onClick={handleMyQuizzes}>
+            <div className="neon-dash-action-icon">📁</div>
+            <div className="neon-dash-action-content">
+              <h3>My Quizzes</h3>
+              <p>View, manage, edit, and launch your existing quizzes and inspect analytics.</p>
+            </div>
+            <span className="neon-dash-action-link">View quizzes →</span>
           </div>
 
           <div
-            className="dashboard-action-card"
+            className="neon-card neon-dash-action-card"
             onClick={() => setPage("create")}
           >
-            <h3>Create a Quiz</h3>
-            <p>Start creating a brand-new quiz for your friends.</p>
-            <span>Create quiz →</span>
+            <div className="neon-dash-action-icon">✨</div>
+            <div className="neon-dash-action-content">
+              <h3>Create a Quiz</h3>
+              <p>Start creating a brand-new live quiz with timed multiplayer questions.</p>
+            </div>
+            <span className="neon-dash-action-link">Create quiz →</span>
           </div>
         </div>
         <Toast message={message} />
@@ -654,171 +662,233 @@ function App() {
 
   if (page === "create") {
     return (
-      <div className="app">
-        <DashboardLayout
-          page={page}
-          setPage={setPage}
-          handleMyQuizzes={handleMyQuizzes}
-          handleLogout={handleLogout}
-        >
-          <main className="create-page">
-            <div className="create-card">
-              <h2>Create Your Quiz</h2>
-              <p>Start building a quiz and challenge your friends!</p>
+      <DashboardLayout
+        page={page}
+        setPage={setPage}
+        handleMyQuizzes={handleMyQuizzes}
+        handleLogout={handleLogout}
+      >
+        <div className="neon-create-container">
+          <div className="neon-dash-header">
+            <div className="neon-dash-titles">
+              <button type="button" className="neon-dash-back-btn" onClick={() => setPage("dashboard")}>
+                ← Back to Dashboard
+              </button>
+              <h1 className="neon-dash-title">Create Your Quiz</h1>
+              <p className="neon-dash-sub">Build a quiz challenge for your participants with live scoring.</p>
+            </div>
+          </div>
 
+          <div className="neon-card neon-form-card">
+            <div className="neon-input-group">
+              <label className="neon-label">Quiz Title</label>
               <input
                 type="text"
-                placeholder="Enter quiz title"
+                className="neon-input"
+                placeholder="e.g., AWS Cloud Practitioner Masterclass"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
+            </div>
 
+            <div className="neon-input-group">
+              <label className="neon-label">Quiz Description</label>
               <textarea
-                placeholder="Enter a short description"
+                className="neon-input neon-textarea"
+                placeholder="Enter a brief overview of what this quiz covers..."
                 rows="4"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               ></textarea>
+            </div>
 
-              <button className="primary-btn" onClick={handleCreateQuiz}>
-                Create Quiz
+            <div className="neon-form-actions">
+              <button type="button" className="neon-btn-primary neon-form-submit-btn" onClick={handleCreateQuiz}>
+                <span>Create Quiz & Build Questions →</span>
               </button>
             </div>
-          </main>
-          <Toast message={message} />
-        </DashboardLayout>
-      </div>
+          </div>
+        </div>
+        <Toast message={message} />
+      </DashboardLayout>
     );
   }
 
   if (page === "editor") {
     return (
-      <div className="app">
-        <DashboardLayout
-          page={page}
-          setPage={setPage}
-          handleMyQuizzes={handleMyQuizzes}
-          handleLogout={handleLogout}
-        >
-          <main className="editor-page">
-            <div className="editor-card">
-              <h2>Quiz Editor</h2>
+      <DashboardLayout
+        page={page}
+        setPage={setPage}
+        handleMyQuizzes={handleMyQuizzes}
+        handleLogout={handleLogout}
+      >
+        <div className="neon-editor-container">
+          <div className="neon-card neon-editor-header-card">
+            <div className="neon-editor-meta-top">
+              <span className="neon-badge-pulse">● QUIZ CONFIGURATION</span>
+              {quizCode && (
+                <div className="neon-editor-code-badge">
+                  <span className="neon-code-label">QUIZ CODE:</span>
+                  <span className="neon-code-str">{quizCode}</span>
+                </div>
+              )}
+            </div>
 
-              <p>Add questions to your quiz.</p>
+            <h1 className="neon-editor-title">{title || "Untitled Quiz"}</h1>
+            <p className="neon-editor-desc">{description || "No description provided."}</p>
 
-              <div className="quiz-info">
-                <h3>{title}</h3>
-                <p>{description}</p>
-                {quizCode && (
-                  <p className="quiz-code-info">
-                    Quiz Code: <strong>{quizCode}</strong>
-                  </p>
-                )}
-              </div>
+            <div className="neon-editor-actions-row">
+              <button
+                type="button"
+                className="neon-btn-ghost neon-manage-questions-btn"
+                onClick={() => {
+                  fetchQuestions(quizId);
+                  setPage("questions");
+                }}
+              >
+                <span>Manage Questions</span>
+                <span className="neon-pill-count">{questions.length}</span>
+              </button>
 
-              <div className="editor-actions">
+              {quizStatus === "waiting" && (
                 <button
-                  className="secondary-btn manage-questions-btn"
-                  onClick={() => {
-                    fetchQuestions(quizId);
-                    setPage("questions");
-                  }}
+                  type="button"
+                  className="neon-btn-ghost neon-waiting-room-btn"
+                  onClick={() => setPage("host-waiting-room")}
                 >
-                  Manage Questions ({questions.length})
+                  Enter Waiting Room →
                 </button>
+              )}
 
-                {quizStatus === "waiting" && (
-                  <button
-                    className="primary-btn waiting-room-direct-btn"
-                    onClick={() => setPage("host-waiting-room")}
-                  >
-                    Enter Waiting Room →
-                  </button>
-                )}
+              <button
+                type="button"
+                className="neon-btn-primary neon-host-launch-btn"
+                onClick={handleHostQuiz}
+              >
+                <span>🚀 Host Quiz</span>
+              </button>
+            </div>
+          </div>
 
-                <button className="primary-btn host-quiz-btn" onClick={handleHostQuiz}>
-                  Host Quiz
-                </button>
+          <div className="neon-card neon-question-form-card">
+            <div className="neon-form-header">
+              <h2 className="neon-form-title">
+                {editingQuestion ? "Edit Question" : "Add New Question"}
+              </h2>
+              <p className="neon-form-sub">
+                {editingQuestion
+                  ? "Update the question, options, and designated correct answer."
+                  : "Build multiple-choice questions or import questions in bulk."}
+              </p>
+            </div>
+
+            <div className="neon-input-group">
+              <label className="neon-label">Question Text</label>
+              <input
+                type="text"
+                className="neon-input neon-question-text-input"
+                placeholder="Type your question here..."
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+              />
+            </div>
+
+            <div className="neon-options-editor-grid">
+              <div className="neon-option-input-wrapper opt-a">
+                <span className="neon-opt-tag tag-a">▲ A</span>
+                <input
+                  type="text"
+                  className="neon-input"
+                  placeholder="Option 1"
+                  value={option1}
+                  onChange={(e) => setOption1(e.target.value)}
+                />
               </div>
 
-              <div className="question-form-section">
-                <h3>{editingQuestion ? "Edit Question" : "Add New Question"}</h3>
-                <div className="input-group">
-                  <input
-                    type="text"
-                    placeholder="Enter your question"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                  />
-                </div>
-                <div className="options-grid">
-                  <input
-                    type="text"
-                    placeholder="Option 1"
-                    value={option1}
-                    onChange={(e) => setOption1(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Option 2"
-                    value={option2}
-                    onChange={(e) => setOption2(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Option 3"
-                    value={option3}
-                    onChange={(e) => setOption3(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Option 4"
-                    value={option4}
-                    onChange={(e) => setOption4(e.target.value)}
-                  />
-                </div>
+              <div className="neon-option-input-wrapper opt-b">
+                <span className="neon-opt-tag tag-b">◆ B</span>
+                <input
+                  type="text"
+                  className="neon-input"
+                  placeholder="Option 2"
+                  value={option2}
+                  onChange={(e) => setOption2(e.target.value)}
+                />
+              </div>
 
-                <select
-                  value={correctAnswer}
-                  onChange={(e) => setCorrectAnswer(e.target.value)}
-                  className="correct-answer-select"
-                >
-                  <option value="">Select the correct answer</option>
-                  <option value="1">Option 1</option>
-                  <option value="2">Option 2</option>
-                  <option value="3">Option 3</option>
-                  <option value="4">Option 4</option>
-                </select>
+              <div className="neon-option-input-wrapper opt-c">
+                <span className="neon-opt-tag tag-c">● C</span>
+                <input
+                  type="text"
+                  className="neon-input"
+                  placeholder="Option 3"
+                  value={option3}
+                  onChange={(e) => setOption3(e.target.value)}
+                />
+              </div>
 
-                <div className="button-group">
-                  <button className="primary-btn add-question-btn" onClick={handleAddQuestion} disabled={isUploading}>
-                    {editingQuestion ? "Save Changes" : "+ Add Question"}
-                  </button>
-                  {!editingQuestion && (
-                    <>
-                      <input
-                        type="file"
-                        accept=".csv, .json, .xlsx, .xls"
-                        ref={fileInputRef}
-                        style={{ display: "none" }}
-                        onChange={handleFileUpload}
-                      />
-                      <button
-                        className="secondary-btn bulk-import-btn"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                      >
-                        {isUploading ? "Uploading..." : "Bulk Import"}
-                      </button>
-                    </>
-                  )}
-                </div>
+              <div className="neon-option-input-wrapper opt-d">
+                <span className="neon-opt-tag tag-d">■ D</span>
+                <input
+                  type="text"
+                  className="neon-input"
+                  placeholder="Option 4"
+                  value={option4}
+                  onChange={(e) => setOption4(e.target.value)}
+                />
               </div>
             </div>
-          </main>
-          <Toast message={message} />
-        </DashboardLayout>
-      </div>
+
+            <div className="neon-input-group">
+              <label className="neon-label">Select Correct Answer</label>
+              <select
+                value={correctAnswer}
+                onChange={(e) => setCorrectAnswer(e.target.value)}
+                className="neon-input neon-select"
+              >
+                <option value="">-- Choose Correct Option --</option>
+                <option value="1">Option 1 (▲ A)</option>
+                <option value="2">Option 2 (◆ B)</option>
+                <option value="3">Option 3 (● C)</option>
+                <option value="4">Option 4 (■ D)</option>
+              </select>
+            </div>
+
+            <div className="neon-form-buttons-row">
+              <button
+                type="button"
+                className="neon-btn-primary"
+                onClick={handleAddQuestion}
+                disabled={isUploading}
+              >
+                {editingQuestion ? "Save Question Changes" : "+ Add Question to Quiz"}
+              </button>
+
+              {!editingQuestion && (
+                <>
+                  <input
+                    type="file"
+                    accept=".csv, .json, .xlsx, .xls"
+                    ref={fileInputRef}
+                    style={{ display: "none" }}
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    type="button"
+                    className="neon-btn-ghost neon-bulk-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    <span>📁</span>
+                    <span>{isUploading ? "Uploading Data..." : "Bulk Import (.csv/.json/.xlsx)"}</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <Toast message={message} />
+      </DashboardLayout>
     );
   }
 
@@ -850,107 +920,125 @@ function App() {
 
   if (page === "quizzes") {
     return (
-      <div className="app">
-        <DashboardLayout
-          page={page}
-          setPage={setPage}
-          handleMyQuizzes={handleMyQuizzes}
-          handleLogout={handleLogout}
-        >
-          <main className="quizzes-page">
-            <div className="quizzes-card">
-              <h2>My Quizzes</h2>
-              <p>Select a quiz to continue editing.</p>
-
-              {quizzes.length === 0 ? (
-                <p>No quizzes found. Create your first quiz!</p>
-              ) : (
-                <div className="quiz-list">
-                  {quizzes.map((quiz) => (
-                    <div
-                      className="quiz-item"
-                      key={quiz.id}
-                      onClick={() => {
-                        setQuizId(quiz.id);
-                        setTitle(quiz.title);
-                        setDescription(quiz.description);
-                        setQuizCode(quiz.quizCode || "");
-                        setQuizStatus(quiz.status || "draft");
-                        fetchQuestions(quiz.id);
-                        setPage("editor");
-                      }}
-                    >
-                      <h3>{quiz.title}</h3>
-                      <p>{quiz.description}</p>
-
-                      <div className="quiz-item-footer" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span className="edit-text">Click to edit →</span>
-                        <button
-                          className="delete-question-btn"
-                          style={{ padding: '0.2rem 0.8rem', fontSize: '0.9rem', marginLeft: 'auto' }}
-                          onClick={(e) => handleDeleteQuiz(e, quiz)}
-                        >
-                          Delete
-                        </button>
-                        {(quiz.status === "completed" || quiz.status === "finished") && (
-                          <button
-                            className="secondary-btn"
-                            style={{ padding: '0.2rem 0.8rem', fontSize: '0.9rem' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setQuizId(quiz.id);
-                              setPage("analytics");
-                            }}
-                          >
-                            Analytics
-                          </button>
-                        )}
-                        <span
-                          className={`quiz-status ${quiz.status || "draft"}`}
-                        >
-                          {quiz.status === "waiting"
-                            ? "Waiting"
-                            : quiz.status === "live"
-                              ? "Live"
-                              : quiz.status === "finished" || quiz.status === "completed"
-                                ? "Completed"
-                                : "Draft"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+      <DashboardLayout
+        page={page}
+        setPage={setPage}
+        handleMyQuizzes={handleMyQuizzes}
+        handleLogout={handleLogout}
+      >
+        <div className="neon-quizzes-container">
+          <div className="neon-dash-header">
+            <div className="neon-dash-titles">
+              <span className="neon-badge-pulse">● HOST REPOSITORY</span>
+              <h1 className="neon-dash-title">My Quizzes</h1>
+              <p className="neon-dash-sub">Select a quiz to continue editing, view analytics, or launch.</p>
             </div>
-          </main>
-          <Toast message={message} />
-          {showDeleteQuizDialog && (
-            <div className="dialog-overlay">
-              <div className="dialog-box">
-                <h2>Delete Quiz?</h2>
-                <p>Are you sure you want to delete this quiz? This action cannot be undone.</p>
-                <div className="dialog-actions">
-                  <button
-                    className="dialog-cancel-btn"
-                    onClick={() => {
-                      setShowDeleteQuizDialog(false);
-                      setQuizToDelete(null);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="dialog-delete-btn"
-                    onClick={confirmDeleteQuiz}
-                  >
-                    Delete
-                  </button>
+            <button type="button" className="neon-btn-primary" onClick={() => setPage("create")}>
+              <span>+ Create Quiz</span>
+            </button>
+          </div>
+
+          {quizzes.length === 0 ? (
+            <div className="neon-card neon-empty-card">
+              <div className="neon-empty-icon">📁</div>
+              <h3>No Quizzes Found</h3>
+              <p>You haven't created any quizzes yet. Build your first challenge now!</p>
+              <button type="button" className="neon-btn-primary" onClick={() => setPage("create")}>
+                + Create Your First Quiz
+              </button>
+            </div>
+          ) : (
+            <div className="neon-quizzes-grid">
+              {quizzes.map((quiz) => (
+                <div
+                  className="neon-card neon-quiz-card"
+                  key={quiz.id}
+                  onClick={() => {
+                    setQuizId(quiz.id);
+                    setTitle(quiz.title);
+                    setDescription(quiz.description);
+                    setQuizCode(quiz.quizCode || "");
+                    setQuizStatus(quiz.status || "draft");
+                    fetchQuestions(quiz.id);
+                    setPage("editor");
+                  }}
+                >
+                  <div className="neon-quiz-card-head">
+                    <h3 className="neon-quiz-card-title">{quiz.title}</h3>
+                    <span className={`neon-quiz-status-badge status-${quiz.status || "draft"}`}>
+                      {quiz.status === "waiting"
+                        ? "Waiting"
+                        : quiz.status === "live"
+                          ? "Live"
+                          : quiz.status === "finished" || quiz.status === "completed"
+                            ? "Completed"
+                            : "Draft"}
+                    </span>
+                  </div>
+
+                  <p className="neon-quiz-card-desc">{quiz.description || "No description provided."}</p>
+
+                  <div className="neon-quiz-card-footer">
+                    <span className="neon-edit-action-link">Click to edit →</span>
+
+                    <div className="neon-quiz-card-actions" onClick={(e) => e.stopPropagation()}>
+                      {(quiz.status === "completed" || quiz.status === "finished") && (
+                        <button
+                          type="button"
+                          className="neon-btn-ghost neon-analytics-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQuizId(quiz.id);
+                            setPage("analytics");
+                          }}
+                        >
+                          Analytics
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="neon-btn-danger neon-delete-btn"
+                        onClick={(e) => handleDeleteQuiz(e, quiz)}
+                        aria-label="Delete Quiz"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           )}
-        </DashboardLayout>
-      </div>
+        </div>
+        <Toast message={message} />
+        {showDeleteQuizDialog && (
+          <div className="neon-dialog-overlay">
+            <div className="neon-dialog-box">
+              <h2 className="neon-dialog-title">Delete Quiz?</h2>
+              <p className="neon-dialog-desc">Are you sure you want to delete this quiz? All associated questions will be removed. This action cannot be undone.</p>
+              <div className="neon-dialog-actions">
+                <button
+                  type="button"
+                  className="neon-btn-ghost"
+                  onClick={() => {
+                    setShowDeleteQuizDialog(false);
+                    setQuizToDelete(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="neon-btn-danger"
+                  onClick={confirmDeleteQuiz}
+                >
+                  Delete Quiz
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </DashboardLayout>
     );
   }
 
@@ -978,34 +1066,33 @@ function App() {
         handleMyQuizzes={handleMyQuizzes}
         handleLogout={handleLogout}
       >
-        <div className="questions-page">
-          <div className="page-header">
-            <div>
-              <h1>Manage Questions</h1>
-              <p>
+        <div className="neon-questions-container">
+          <div className="neon-dash-header">
+            <div className="neon-dash-titles">
+              <button type="button" className="neon-dash-back-btn" onClick={() => setPage("editor")}>
+                ← Back to Quiz Editor
+              </button>
+              <h1 className="neon-dash-title">Manage Questions</h1>
+              <p className="neon-dash-sub">
                 {title} • {questions.length}{" "}
                 {questions.length === 1 ? "Question" : "Questions"}
               </p>
             </div>
-
-            <button className="secondary-btn" onClick={() => setPage("editor")}>
-              ← Back to Quiz Editor
-            </button>
           </div>
 
-          <div className="question-search">
-            <span className="search-icon">🔍</span>
-
+          <div className="neon-search-bar-wrap">
+            <span className="neon-search-icon">🔍</span>
             <input
               type="text"
-              placeholder="Search questions..."
+              className="neon-input neon-search-input"
+              placeholder="Search questions by keyword..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-
             {searchTerm && (
               <button
-                className="clear-search"
+                type="button"
+                className="neon-search-clear-btn"
                 onClick={() => setSearchTerm("")}
               >
                 ✕
@@ -1014,90 +1101,87 @@ function App() {
           </div>
 
           {searchTerm && (
-            <p className="search-results">
+            <p className="neon-search-result-count">
               {filteredQuestions.length}{" "}
               {filteredQuestions.length === 1 ? "question" : "questions"} found
             </p>
           )}
 
           {questions.length === 0 ? (
-            <div className="empty-questions">
-              <h3>No questions yet</h3>
-              <p>Add your first question from the Quiz Editor.</p>
-
-              <button className="primary-btn" onClick={() => setPage("editor")}>
+            <div className="neon-card neon-empty-card">
+              <div className="neon-empty-icon">❓</div>
+              <h3>No Questions Yet</h3>
+              <p>Add your first question from the Quiz Editor to populate your quiz.</p>
+              <button type="button" className="neon-btn-primary" onClick={() => setPage("editor")}>
                 + Add Question
               </button>
             </div>
           ) : filteredQuestions.length === 0 ? (
-            <div className="no-search-results">
-              <h3>No questions found</h3>
-              <p>Try searching with a different word.</p>
+            <div className="neon-card neon-empty-card">
+              <h3>No Questions Found</h3>
+              <p>No questions matched your search query. Try another keyword.</p>
             </div>
           ) : (
-            <div className="questions-grid">
+            <div className="neon-questions-grid">
               {filteredQuestions.map((question, index) => (
-                <div className="question-card" key={question.id}>
-                  <div className="question-card-header">
-                    <span className="question-number">
-                      Question {index + 1}
-                    </span>
-                  </div>
-
-                  <h3>{question.question}</h3>
-
-                  <div className="question-options">
-                    {question.options.map((option, optionIndex) => (
-                      <div
-                        key={optionIndex}
-                        className={`question-option ${optionIndex + 1 === question.correctAnswer
-                            ? "correct-option"
-                            : ""
-                          }`}
+                <div className="neon-card neon-question-item-card" key={question.id}>
+                  <div className="neon-question-card-header">
+                    <span className="neon-q-num-badge">Question {index + 1}</span>
+                    <div className="neon-q-actions">
+                      <button
+                        type="button"
+                        className="neon-btn-ghost neon-btn-sm"
+                        onClick={() => handleEditQuestion(question)}
                       >
-                        <span>{optionIndex + 1}.</span>
-                        {option}
-
-                        {optionIndex + 1 === question.correctAnswer && (
-                          <span className="correct-label">✓ Correct</span>
-                        )}
-                      </div>
-                    ))}
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="neon-btn-danger neon-btn-sm"
+                        onClick={() => handleDeleteQuestion(question)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="question-actions">
-                    <button
-                      className="edit-question-btn"
-                      onClick={() => handleEditQuestion(question)}
-                    >
-                      Edit
-                    </button>
+                  <h3 className="neon-question-item-title">{question.question}</h3>
 
-                    <button
-                      className="delete-question-btn"
-                      onClick={() => handleDeleteQuestion(question)}
-                    >
-                      Delete
-                    </button>
+                  <div className="neon-question-options-list">
+                    {question.options.map((option, optionIndex) => {
+                      const isCorrect = optionIndex + 1 === question.correctAnswer;
+                      const tags = ["▲ A", "◆ B", "● C", "■ D"];
+                      return (
+                        <div
+                          key={optionIndex}
+                          className={`neon-question-option-item ${isCorrect ? "correct-answer" : ""}`}
+                        >
+                          <span className="neon-option-idx-tag">{tags[optionIndex] || `${optionIndex + 1}.`}</span>
+                          <span className="neon-option-item-text">{option}</span>
+                          {isCorrect && (
+                            <span className="neon-correct-tag">✓ Correct Answer</span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
         {showDeleteDialog && (
-          <div className="dialog-overlay">
-            <div className="dialog-box">
-              <h2>Delete Question?</h2>
-
-              <p>
-                Are you sure you want to delete this question? This action
-                cannot be undone.
+          <div className="neon-dialog-overlay">
+            <div className="neon-dialog-box">
+              <h2 className="neon-dialog-title">Delete Question?</h2>
+              <p className="neon-dialog-desc">
+                Are you sure you want to delete this question? This action cannot be undone.
               </p>
-
-              <div className="dialog-actions">
+              <div className="neon-dialog-actions">
                 <button
-                  className="dialog-cancel-btn"
+                  type="button"
+                  className="neon-btn-ghost"
                   onClick={() => {
                     setShowDeleteDialog(false);
                     setQuestionToDelete(null);
@@ -1105,9 +1189,9 @@ function App() {
                 >
                   Cancel
                 </button>
-
                 <button
-                  className="dialog-delete-btn"
+                  type="button"
+                  className="neon-btn-danger"
                   onClick={confirmDeleteQuestion}
                 >
                   Delete

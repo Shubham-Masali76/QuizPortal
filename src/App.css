@@ -9,15 +9,15 @@
 }
 
 body {
-  background: #f7f7f7;
-  color: #1f2937;
-  font-family: Arial, sans-serif;
+  background: #07040f;
+  color: #f8fafc;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .app {
   min-height: 100vh;
-  background: #f7f7f7;
-  color: #1f2937;
+  background: transparent;
+  color: #f8fafc;
 }
 
 /* =========================
@@ -213,33 +213,35 @@ button:hover {
 }
 
 .dashboard-action-card {
-  background: white;
+  background: rgba(18, 12, 38, 0.85);
   padding: 28px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(168, 85, 247, 0.25);
   border-radius: 16px;
   cursor: pointer;
   transition: 0.2s ease;
+  color: #ffffff;
 }
 
 .dashboard-action-card:hover {
   transform: translateY(-4px);
-  border-color: #4f46e5;
-  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.1);
+  border-color: #a855f7;
+  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.25);
 }
 
 .dashboard-action-card h3 {
   font-size: 1.3rem;
   margin-bottom: 10px;
+  color: #ffffff;
 }
 
 .dashboard-action-card p {
-  color: #6b7280;
+  color: #94a3b8;
   line-height: 1.6;
   margin-bottom: 18px;
 }
 
 .dashboard-action-card span {
-  color: #4f46e5;
+  color: #c084fc;
   font-weight: 600;
 }
 
@@ -258,20 +260,23 @@ button:hover {
 .create-card {
   width: 100%;
   max-width: 500px;
-  background: white;
+  background: rgba(18, 12, 38, 0.88);
   padding: 40px;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   text-align: center;
+  color: #ffffff;
 }
 
 .create-card h2 {
   font-size: 2rem;
   margin-bottom: 10px;
+  color: #ffffff;
 }
 
 .create-card p {
-  color: #6b7280;
+  color: #94a3b8;
   margin-bottom: 30px;
 }
 
@@ -280,11 +285,12 @@ button:hover {
   width: 100%;
   padding: 14px;
   margin-bottom: 16px;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgba(168, 85, 247, 0.3);
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  color: #1f2937;
+  color: #ffffff;
+  background: rgba(10, 6, 24, 0.85);
 }
 
 .create-card textarea {
@@ -295,8 +301,8 @@ button:hover {
 .create-card input:focus,
 .create-card textarea:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.35);
 }
 
 .create-card .primary-btn {
@@ -321,10 +327,11 @@ button:hover {
   font-size: 2rem;
   margin-bottom: 8px;
   text-align: left;
+  color: #ffffff;
 }
 
 .quizzes-card > p {
-  color: #6b7280;
+  color: #94a3b8;
   margin-bottom: 30px;
   text-align: left;
 }
@@ -340,11 +347,12 @@ button:hover {
   min-height: 190px;
   padding: 24px;
   margin: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: rgba(18, 12, 38, 0.85);
+  border: 1px solid rgba(168, 85, 247, 0.25);
   border-radius: 14px;
   cursor: pointer;
   transition: 0.2s ease;
+  color: #ffffff;
 
   display: flex;
   flex-direction: column;
@@ -354,20 +362,20 @@ button:hover {
 
 .quiz-item:hover {
   transform: translateY(-4px);
-  border-color: #4f46e5;
-  box-shadow: 0 12px 25px rgba(79, 70, 229, 0.12);
+  border-color: #a855f7;
+  box-shadow: 0 12px 25px rgba(124, 58, 237, 0.25);
 }
 
 .quiz-item h3 {
   width: 100%;
   font-size: 1.25rem;
   margin-bottom: 10px;
-  color: #1f2937;
+  color: #ffffff;
 }
 
 .quiz-item p {
   width: 100%;
-  color: #6b7280;
+  color: #94a3b8;
   line-height: 1.5;
 }
 
@@ -382,7 +390,7 @@ button:hover {
 }
 
 .edit-text {
-  color: #4f46e5;
+  color: #c084fc;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -400,10 +408,12 @@ button:hover {
 .editor-card {
   width: 100%;
   max-width: 700px;
-  background: white;
+  background: rgba(18, 12, 38, 0.88);
   padding: 40px;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
 
   display: flex;
   flex-direction: column;
@@ -412,46 +422,49 @@ button:hover {
 
 .editor-card h2 {
   font-size: 2rem;
+  color: #ffffff;
 }
 
 .editor-card > p {
-  color: #6b7280;
+  color: #94a3b8;
   margin-bottom: 10px;
 }
 
 .quiz-info {
-  background: #f9fafb;
+  background: rgba(10, 6, 24, 0.85);
   padding: 18px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(168, 85, 247, 0.3);
   border-radius: 10px;
   margin-bottom: 5px;
+  color: #ffffff;
 }
 
 .quiz-info h3 {
   margin-bottom: 6px;
+  color: #ffffff;
 }
 
 .quiz-info p {
-  color: #6b7280;
+  color: #94a3b8;
 }
 
 .editor-card input,
 .editor-card select {
   width: 100%;
   padding: 14px;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgba(168, 85, 247, 0.3);
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  color: #1f2937;
-  background: white;
+  color: #ffffff;
+  background: rgba(10, 6, 24, 0.85);
 }
 
 .editor-card input:focus,
 .editor-card select:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.35);
 }
 
 .editor-card .primary-btn {
@@ -845,7 +858,8 @@ button:hover {
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(17, 24, 39, 0.45);
+  background: rgba(5, 3, 12, 0.85);
+  backdrop-filter: blur(12px);
 
   display: flex;
   align-items: center;
@@ -857,20 +871,23 @@ button:hover {
 
 .dialog-box {
   width: 100%;
-  max-width: 420px;
-  background: white;
-  border-radius: 14px;
+  max-width: 440px;
+  background: rgba(22, 14, 40, 0.95);
+  border: 1.5px solid rgba(239, 68, 68, 0.5);
+  border-radius: 20px;
   padding: 28px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 45px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .dialog-box h2 {
   font-size: 1.4rem;
   margin-bottom: 10px;
+  color: #ffffff;
 }
 
 .dialog-box p {
-  color: #6b7280;
+  color: #94a3b8;
   line-height: 1.5;
   margin-bottom: 25px;
 }
@@ -882,18 +899,31 @@ button:hover {
 }
 
 .dialog-cancel-btn {
-  background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: rgba(168, 85, 247, 0.12);
+  color: #e9d5ff;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.dialog-cancel-btn:hover {
+  background: rgba(168, 85, 247, 0.25);
+  color: #ffffff;
 }
 
 .dialog-delete-btn {
-  background: #dc2626;
-  color: white;
+  background: rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
 }
 
 .dialog-delete-btn:hover {
-  background: #b91c1c;
+  background: rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
 }
 
 /* =========================
