@@ -173,13 +173,14 @@ export default function HostWaitingRoom({
         await qBatch.commit();
       }
 
+      const prepDuration = 3;
       await updateDoc(doc(db, "quizzes", quizId), {
         status: "live",
         currentQuestionIndex: 0,
         currentQuestionId: firstQId,
         questionOrder: questionOrder,
-        questionStatus: "answering",
-        phaseEndTime: Date.now() + (timeLimit * 1000),
+        questionStatus: "preparing",
+        phaseEndTime: Date.now() + (prepDuration * 1000) + 200,
         questionTimeLimit: timeLimit,
         answeringTimeLimit: timeLimit,
       });

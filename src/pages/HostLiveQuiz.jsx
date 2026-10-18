@@ -4,6 +4,7 @@ import { ref as rtdbRef, onValue } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import LeaderboardView from "../components/LeaderboardView";
 import PodiumView from "../components/PodiumView";
+import NeonConfetti from "../components/NeonConfetti";
 import { sortQuestions } from "../utils/helpers";
 import NeonBackground from "../components/NeonBackground";
 import { CpuIcon, TrophyIcon, UsersIcon, CheckCircleIcon } from "../components/NeonIcons";
@@ -11,12 +12,13 @@ import { CpuIcon, TrophyIcon, UsersIcon, CheckCircleIcon } from "../components/N
 const HostLiveQuiz = ({ quizId, setPage }) => {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [quizStatus, setQuizStatus] = useState("loading"); // loading, answering, results, question_leaderboard, leaderboard
+  const [quizStatus, setQuizStatus] = useState("loading"); // loading, preparing, answering, results, question_leaderboard, leaderboard
   const [timeLeft, setTimeLeft] = useState(0);
   const [responses, setResponses] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [presenceMap, setPresenceMap] = useState(null);
   const [quizData, setQuizData] = useState(null);
+  const [transitionOverlay, setTransitionOverlay] = useState(null);
   const isTransitioning = useRef(false);
   const currentPhaseEndTime = useRef(null);
 
@@ -50,6 +52,9 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
       const endTime = Date.now() + (timeLimit * 1000);
       updateData.phaseEndTime = endTime;
       currentPhaseEndTime.current = endTime;
+    } else {
+      updateData.phaseEndTime = null;
+      currentPhaseEndTime.current = null;
     }
 
     setQuizData(prev => prev ? { ...prev, ...updateData } : updateData);
@@ -165,9 +170,17 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     if (isTransitioning.current) return;
     isTransitioning.current = true;
     try {
+      setTransitionOverlay({
+        title: "TABULATING STANDINGS & SCORES...",
+        subtitle: "Calculating participant ranks and streak points",
+        badge: "LIVE SCOREBOARD",
+      });
+      await new Promise(r => setTimeout(r, 650));
       await updateQuizState(currentQuestionIndex, "question_leaderboard");
+      setTransitionOverlay(null);
     } catch (err) {
       console.error("Error in handleShowLeaderboard:", err);
+      setTransitionOverlay(null);
     } finally {
       isTransitioning.current = false;
     }
@@ -214,8 +227,8 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
                         qData.currentQuestionIndex === null;
 
         if (isFresh) {
-          setTimeLeft(qLimit);
-          await updateQuizState(0, "answering", qLimit, sortedQuestions);
+          setTimeLeft(3);
+          await updateQuizState(0, "preparing", 3, sortedQuestions);
         } else {
           // Resume quiz state
           const activeIndex = Number(qData.currentQuestionIndex) || 0;
@@ -228,6 +241,8 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
             setTimeLeft(remaining);
           } else if (currentStatus === "answering") {
             setTimeLeft(qLimit);
+          } else if (currentStatus === "preparing") {
+            setTimeLeft(3);
           }
         }
       } catch (err) {
@@ -295,7 +310,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
   useEffect(() => {
     let timer;
-    if (quizStatus === "answering") {
+    if (quizStatus === "answering" || quizStatus === "preparing") {
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -314,10 +329,15 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
       if (quizStatus === "answering") {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         handleShowResults();
+      } else if (quizStatus === "preparing") {
+        // Synchronized 3s countdown finished -> Start question answering
+        const qLimit = quizData?.questionTimeLimit || quizData?.answeringTimeLimit || 20;
+        setTimeLeft(qLimit);
+        updateQuizState(currentQuestionIndex, "answering", qLimit);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, quizStatus]); // exclude handlers so we don't re-trigger on response updates
+  }, [timeLeft, quizStatus, currentQuestionIndex, quizData]);
 
   const handleNextQuestion = async () => {
     if (isTransitioning.current) return;
@@ -326,11 +346,26 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     try {
       const nextIndex = Number(currentQuestionIndex) + 1;
       if (nextIndex < questions.length) {
-        const qLimit = quizData?.questionTimeLimit || quizData?.answeringTimeLimit || 20;
-        setTimeLeft(qLimit);
+        setTransitionOverlay({
+          title: `PREPARING QUESTION ${nextIndex + 1}`,
+          subtitle: "Get ready for the next challenge",
+          badge: `QUESTION ${nextIndex + 1} OF ${questions.length}`,
+        });
+        await new Promise(r => setTimeout(r, 650));
+        setTransitionOverlay(null);
+
+        const prepDuration = 3;
+        setTimeLeft(prepDuration);
         setResponses([]);
-        await updateQuizState(nextIndex, "answering", qLimit);
+        await updateQuizState(nextIndex, "preparing", prepDuration);
       } else {
+        // Final question completed -> Show celebration transition then Podium!
+        setTransitionOverlay({
+          title: "CHAMPIONS PODIUM REVEAL",
+          subtitle: "Tallying final scores and tournament rankings...",
+          badge: "GRAND FINALE",
+        });
+        await new Promise(r => setTimeout(r, 1100));
         await updateDoc(doc(db, "quizzes", quizId), { 
           status: "completed", 
           questionStatus: "closed",
@@ -338,9 +373,11 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
         });
         setQuizData(prev => prev ? { ...prev, status: "completed", questionStatus: "closed", phaseEndTime: null } : { status: "completed", questionStatus: "closed" });
         setQuizStatus("leaderboard");
+        setTransitionOverlay(null);
       }
     } catch (err) {
       console.error("Error progressing to next question:", err);
+      setTransitionOverlay(null);
     } finally {
       isTransitioning.current = false;
     }
@@ -555,49 +592,77 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
 
         {/* Live Quiz Main Stage */}
         {quizStatus === "leaderboard" ? (
-          <div className="neon-host-card" style={{ textAlign: 'center', padding: '3.5rem 2rem' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.45rem 1.4rem', borderRadius: '9999px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.35)', color: '#4ade80', fontWeight: '800', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
-              ✓ Quiz Completed
-            </div>
-            <h1 style={{ fontSize: '3.2rem', fontWeight: 900, margin: '0.25rem 0 1rem 0', color: '#ffca3a', textShadow: '0 0 25px rgba(255, 202, 58, 0.5)' }}>
-              CHAMPIONS PODIUM
-            </h1>
-            <p style={{ color: '#a1a1aa', fontSize: '1.1rem', marginBottom: '2rem' }}>
-              Congratulations to all top performers of this session!
-            </p>
-
-            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <PodiumView participants={activeParticipants} />
-            </div>
-
-            {activeParticipants.length === 0 && (
-              <p style={{ color: '#71717a', marginTop: '2rem', fontSize: '1.1rem' }}>
-                No active participants submitted answers in this session.
+          <>
+            <NeonConfetti />
+            <div className="neon-host-card" style={{ textAlign: 'center', padding: '3.5rem 2rem' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.45rem 1.4rem', borderRadius: '9999px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.35)', color: '#4ade80', fontWeight: '800', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
+                ✓ Quiz Completed
+              </div>
+              <h1 style={{ fontSize: '3.2rem', fontWeight: 900, margin: '0.25rem 0 1rem 0', color: '#ffca3a', textShadow: '0 0 25px rgba(255, 202, 58, 0.5)' }}>
+                CHAMPIONS PODIUM
+              </h1>
+              <p style={{ color: '#a1a1aa', fontSize: '1.1rem', marginBottom: '2rem' }}>
+                Congratulations to all top performers of this session!
               </p>
-            )}
 
-            <div style={{ marginTop: '3.5rem', display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button 
-                type="button"
-                className="neon-btn-primary" 
-                onClick={() => setPage("analytics")} 
-                style={{ width: 'auto', padding: '0.95rem 2.5rem', fontSize: '1.15rem' }}
-              >
-                <span>View Analytics & Reports</span>
-                <span>→</span>
-              </button>
-              <button 
-                type="button"
-                className="neon-btn-ghost" 
-                onClick={handleEndQuiz} 
-                style={{ width: 'auto', padding: '0.95rem 2rem', fontSize: '1.15rem' }}
-              >
-                Back to Dashboard
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <PodiumView participants={activeParticipants} />
+              </div>
+
+              {activeParticipants.length === 0 && (
+                <p style={{ color: '#71717a', marginTop: '2rem', fontSize: '1.1rem' }}>
+                  No active participants submitted answers in this session.
+                </p>
+              )}
+
+              <div style={{ marginTop: '3.5rem', display: 'flex', gap: '1.25rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button 
+                  type="button"
+                  className="neon-btn-primary" 
+                  onClick={() => setPage("analytics")} 
+                  style={{ width: 'auto', padding: '0.95rem 2.5rem', fontSize: '1.15rem' }}
+                >
+                  <span>View Analytics & Reports</span>
+                  <span>→</span>
+                </button>
+                <button 
+                  type="button"
+                  className="neon-btn-ghost" 
+                  onClick={handleEndQuiz} 
+                  style={{ width: 'auto', padding: '0.95rem 2rem', fontSize: '1.15rem' }}
+                >
+                  Back to Dashboard
+                </button>
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="neon-host-card">
+            {/* Preparing Phase: 3-Second Synchronized Countdown */}
+            {quizStatus === "preparing" && (
+              <div className="neon-preparing-card">
+                <div className="neon-prep-top-badge">
+                  <span className="neon-pulse-dot" />
+                  PREPARING QUESTION {currentQuestionIndex + 1} OF {questions.length}
+                </div>
+                <h1 className="neon-prep-heading">GET READY!</h1>
+                <div className="neon-prep-countdown-wrap">
+                  <div className="neon-prep-radar-ring" />
+                  <div className="neon-prep-number" key={timeLeft}>
+                    {timeLeft > 0 ? timeLeft : "GO!"}
+                  </div>
+                </div>
+                <div className="neon-prep-details">
+                  <p className="neon-prep-hint" style={{ fontSize: '1.15rem', color: '#e2e8f0', fontWeight: 600 }}>
+                    {currentQuestion?.question}
+                  </p>
+                  <div className="neon-prep-status-pill">
+                    <span>Synchronizing {activeParticipants.length} active participants...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Answering Phase Timer */}
             {quizStatus === "answering" && (
               <div className="neon-host-timer-circle">
@@ -738,7 +803,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
                     </p>
                   </div>
                 </div>
-                <LeaderboardView participants={activeParticipants} />
+                <LeaderboardView key={`host-lb-${currentQuestionIndex}`} participants={activeParticipants} />
               </div>
             )}
 
@@ -781,6 +846,19 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
                 </button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Fullscreen Suspense / Stage Transition Overlay */}
+        {transitionOverlay && (
+          <div className="neon-transition-overlay">
+            <div className="neon-transition-badge">
+              <span className="neon-pulse-dot" />
+              {transitionOverlay.badge}
+            </div>
+            <h2 className="neon-transition-title">{transitionOverlay.title}</h2>
+            <p className="neon-transition-subtitle">{transitionOverlay.subtitle}</p>
+            <div className="neon-transition-spinner" />
           </div>
         )}
 
