@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { doc, onSnapshot, collection, getDocs, getDoc, query } from "firebase/firestore";
-import { ref as rtdbRef, onValue as rtdbOnValue, set as rtdbSet, onDisconnect as rtdbOnDisconnect } from "firebase/database";
+import { ref as rtdbRef, onValue as rtdbOnValue, set as rtdbSet, onDisconnect as rtdbOnDisconnect, get as rtdbGet } from "firebase/database";
 import { db, rtdb } from "../services/firebase";
 import { submitResponseRTDB, sortQuestions, sortParticipants } from "../utils/helpers";
 import { 
@@ -103,16 +103,20 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
     return () => unsub();
   }, [quizId, participantId]);
 
-  // Listen to all participants for standings scoreboard
+  // Listen to all participants for standings scoreboard (with fallback)
   useEffect(() => {
     const q = query(collection(db, "quizzes", quizId, "participants"));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      list.sort(sortParticipants);
-      setAllParticipants(list);
+      if (quizState.leaderboardTop5 && Array.isArray(quizState.leaderboardTop5) && quizState.leaderboardTop5.length > 0) {
+        setAllParticipants(quizState.leaderboardTop5);
+      } else {
+        list.sort(sortParticipants);
+        setAllParticipants(list);
+      }
     });
     return () => unsub();
-  }, [quizId]);
+  }, [quizId, quizState.leaderboardTop5]);
 
   // Record baseline rank before new question starts
   useEffect(() => {
@@ -166,7 +170,11 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
           questionStatus: data.questionStatus || "answering",
           status: data.status,
           phaseEndTime: data.phaseEndTime || null,
+          leaderboardTop5: data.leaderboardTop5 || null,
         });
+        if (data.leaderboardTop5 && Array.isArray(data.leaderboardTop5)) {
+          setAllParticipants(data.leaderboardTop5);
+        }
         if (data.questionTimeLimit || data.answeringTimeLimit) {
           setQuizInfo(prev => ({
             ...prev,
@@ -188,6 +196,31 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
       document.activeElement.blur();
     }
   }, [quizState.currentQuestionIndex, quizState.currentQuestionId]);
+
+  // Restore selected answer if already submitted for this question (e.g. on browser refresh)
+  useEffect(() => {
+    if (!quizId || !participantId || quizState.currentQuestionIndex === undefined) return;
+
+    let isMounted = true;
+    const respRef = rtdbRef(rtdb, `responses/${quizId}/${quizState.currentQuestionIndex}/${participantId}`);
+
+    rtdbGet(respRef).then((snap) => {
+      if (isMounted && snap.exists()) {
+        const val = snap.val();
+        const optNum = val?.selectedOption || val?.option;
+        if (optNum !== undefined && optNum !== null) {
+          setSelectedOption(Number(optNum) - 1);
+          setHasSubmitted(true);
+        }
+      }
+    }).catch((err) => {
+      console.warn("Could not check prior submission:", err);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [quizId, participantId, quizState.currentQuestionIndex]);
 
   const currentQuestion = (quizState?.currentQuestionId && questions.find(q => q.id === quizState.currentQuestionId)) 
     || questions[quizState.currentQuestionIndex] 

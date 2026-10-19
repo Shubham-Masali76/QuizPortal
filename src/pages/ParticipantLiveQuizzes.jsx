@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import JoinQuizScreen from "./JoinQuizScreen";
 import ParticipantLobby from "./ParticipantLobby";
@@ -16,7 +16,67 @@ export default function ParticipantLiveQuizzes({ onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedQuiz, setSelectedQuiz] = useState(null);
-  const [joinedSession, setJoinedSession] = useState(null);
+  const [joinedSession, setJoinedSession] = useState(() => {
+    try {
+      const saved = localStorage.getItem("quizmeter_participant_session");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const handleJoinedSession = (session) => {
+    setJoinedSession(session);
+    try {
+      localStorage.setItem("quizmeter_participant_session", JSON.stringify(session));
+    } catch (err) {
+      console.warn("Could not save participant session:", err);
+    }
+  };
+
+  const handleLeaveSession = () => {
+    setJoinedSession(null);
+    setSelectedQuiz(null);
+    try {
+      localStorage.removeItem("quizmeter_participant_session");
+    } catch (err) {
+      console.warn("Could not clear participant session:", err);
+    }
+  };
+
+  const handleBackToRoleSelection = () => {
+    try {
+      localStorage.removeItem("quizmeter_participant_session");
+    } catch (err) {
+      console.warn("Could not clear participant session:", err);
+    }
+    if (onBack) onBack();
+  };
+
+  // Verify persisted quiz existence and active status on mount
+  useEffect(() => {
+    if (!joinedSession?.quizId) return;
+
+    let isMounted = true;
+    const verifyPersistedQuiz = async () => {
+      try {
+        const qDoc = await getDoc(doc(db, "quizzes", joinedSession.quizId));
+        if (!isMounted) return;
+        if (!qDoc.exists()) {
+          console.warn("Persisted quiz no longer exists, clearing session.");
+          handleLeaveSession();
+        }
+      } catch (err) {
+        console.warn("Error verifying persisted quiz:", err);
+      }
+    };
+
+    verifyPersistedQuiz();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [joinedSession?.quizId]);
 
   const fetchQuizzes = async () => {
     setLoading(true);
@@ -98,10 +158,7 @@ export default function ParticipantLiveQuizzes({ onBack }) {
         participantId={joinedSession.participantId}
         participantName={joinedSession.participantName}
         initialAvatar={joinedSession.participantAvatar}
-        onLeave={() => {
-          setJoinedSession(null);
-          setSelectedQuiz(null);
-        }}
+        onLeave={handleLeaveSession}
       />
     );
   }
@@ -111,7 +168,7 @@ export default function ParticipantLiveQuizzes({ onBack }) {
       <JoinQuizScreen
         selectedQuiz={selectedQuiz}
         onBack={() => setSelectedQuiz(null)}
-        onJoined={(session) => setJoinedSession(session)}
+        onJoined={handleJoinedSession}
       />
     );
   }
@@ -132,7 +189,7 @@ export default function ParticipantLiveQuizzes({ onBack }) {
           <button
             type="button"
             className="neon-pill-btn"
-            onClick={onBack}
+            onClick={handleBackToRoleSelection}
           >
             ← Back to Role Selection
           </button>

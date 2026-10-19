@@ -79,7 +79,27 @@ function App() {
   const [user, setUser] = useState(null);
   const [showLoadingPortal, setShowLoadingPortal] = useState(true);
   const [isLoaderExiting, setIsLoaderExiting] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(() => {
+    try {
+      return localStorage.getItem("quizmeter_role") || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const handleSelectRole = (role) => {
+    setSelectedRole(role);
+    try {
+      if (role) {
+        localStorage.setItem("quizmeter_role", role);
+      } else {
+        localStorage.removeItem("quizmeter_role");
+        localStorage.removeItem("quizmeter_participant_session");
+      }
+    } catch (err) {
+      console.warn("Could not sync role to localStorage:", err);
+    }
+  };
   const [authPage, setAuthPage] = useState("login");
   const [page, setPage] = useState("dashboard");
   const [title, setTitle] = useState("");
@@ -113,7 +133,7 @@ function App() {
       if (!currentUser) {
         setAuthPage("login");
       } else {
-        setSelectedRole("host");
+        handleSelectRole("host");
         setPage("dashboard");
       }
 
@@ -234,7 +254,7 @@ function App() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
 
-      setSelectedRole("host");
+      handleSelectRole("host");
       setPage("dashboard");
 
       setMessage("Logged in successfully!");
@@ -252,7 +272,7 @@ function App() {
     try {
       await signOut(auth);
 
-      setSelectedRole(null);
+      handleSelectRole(null);
       setPage("login");
       setMessage("Logged out successfully!");
 
@@ -705,11 +725,11 @@ function App() {
   const renderAppContent = () => {
 
   if (!selectedRole) {
-    return <RoleSelection onSelectRole={setSelectedRole} />;
+    return <RoleSelection onSelectRole={handleSelectRole} />;
   }
 
   if (selectedRole === "participant") {
-    return <ParticipantLiveQuizzes onBack={() => setSelectedRole(null)} />;
+    return <ParticipantLiveQuizzes onBack={() => handleSelectRole(null)} />;
   }
 
   if (!user) {
@@ -719,7 +739,7 @@ function App() {
         setAuthPage={setAuthPage}
         handleLogin={handleLogin}
         handleSignup={handleSignup}
-        onBack={() => setSelectedRole(null)}
+        onBack={() => handleSelectRole(null)}
       />
     );
   }

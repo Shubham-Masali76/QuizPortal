@@ -34,7 +34,7 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
     return online.length > 0 ? online : participants;
   }, [participants, presenceMap, responses]);
 
-  const updateQuizState = useCallback(async (index, status, timeLimit = 0, qListOverride = null) => {
+  const updateQuizState = useCallback(async (index, status, timeLimit = 0, qListOverride = null, top5Override = null) => {
     const numIndex = Number(index);
     setCurrentQuestionIndex(numIndex);
     setQuizStatus(status);
@@ -47,6 +47,10 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
       currentQuestionId: targetQ?.id || null,
       questionStatus: status, // "answering", "results", "question_leaderboard", "closed"
     };
+
+    if (top5Override && Array.isArray(top5Override)) {
+      updateData.leaderboardTop5 = top5Override;
+    }
 
     if (timeLimit > 0) {
       const endTime = Date.now() + (timeLimit * 1000);
@@ -119,6 +123,14 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
            updates[p.id].rank = index + 1;
         });
 
+        const top5Leaderboard = updatedParticipantsArray.slice(0, 5).map((p, idx) => ({
+          id: p.id,
+          name: p.name || "Anonymous",
+          score: p.score || 0,
+          rank: idx + 1,
+          avatar: p.avatar || "",
+        }));
+
         // Chunk batch operations to avoid 500 limit
         const chunkedBatches = [];
         let currentBatch = writeBatch(db);
@@ -156,6 +168,9 @@ const HostLiveQuiz = ({ quizId, setPage }) => {
         for (const b of chunkedBatches) {
           await b.commit();
         }
+
+        await updateQuizState(currentQuestionIndex, "results", 0, null, top5Leaderboard);
+        return;
       }
 
       await updateQuizState(currentQuestionIndex, "results");
