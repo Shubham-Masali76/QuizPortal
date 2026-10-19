@@ -192,35 +192,26 @@ export default function ParticipantLobby({
   }, [activeParticipants, participantId, quizId]);
 
   // 5. Explicit Leave handler: cancel onDisconnect, remove RTDB presence, delete Firestore doc
-  const handleLeaveLobby = async () => {
+  const handleLeaveLobby = () => {
     if (isLeaving) return;
     setIsLeaving(true);
-    try {
-      if (participantId && quizId) {
-        const presenceRef = rtdbRef(
-          rtdb,
-          `presence/${quizId}/${participantId}`,
-        );
-        try {
-          await rtdbOnDisconnect(presenceRef).cancel();
-        } catch {
-          // ignore if already disconnected
-        }
-        try {
-          await rtdbRemove(presenceRef);
-        } catch (e) {
-          console.error("Error removing RTDB presence on leave:", e);
-        }
 
-        await deleteDoc(
-          doc(db, "quizzes", quizId, "participants", participantId),
-        );
+    const pId = participantId;
+    const qId = quizId;
+
+    // Immediately transition out so the participant instantly returns to Live Quizzes
+    onLeave();
+
+    // Clean up RTDB presence and participant doc non-blocking in background
+    if (pId && qId) {
+      try {
+        const presenceRef = rtdbRef(rtdb, `presence/${qId}/${pId}`);
+        rtdbOnDisconnect(presenceRef).cancel().catch(() => {});
+        rtdbRemove(presenceRef).catch(() => {});
+        deleteDoc(doc(db, "quizzes", qId, "participants", pId)).catch(() => {});
+      } catch (err) {
+        console.error("Error cleaning up on leave:", err);
       }
-    } catch (err) {
-      console.error("Error leaving lobby:", err);
-    } finally {
-      setIsLeaving(false);
-      onLeave();
     }
   };
 
@@ -231,13 +222,39 @@ export default function ParticipantLobby({
 
   if (loading) {
     return (
-      <div className="participant-lobby-page">
-        <div className="participant-lobby-card">
-          <div className="role-logo">QuizPortal</div>
-          <h2>Connecting to Lobby...</h2>
-          <p className="lobby-loading-text">
-            Joining {initialTitle || "quiz"}...
-          </p>
+      <div className="neon-theme-wrapper neon-centered-wrapper">
+        <NeonBackground />
+        <div className="neon-mobile-frame neon-centered-frame">
+          <header className="neon-header-bar">
+            <div className="neon-brand-badge">
+              <CpuIcon size={26} />
+              <div className="neon-brand-text">
+                <span className="neon-brand-org">AWS STUDENT BUILDER GROUP</span>
+                <span className="neon-brand-sub">AT NKOCET</span>
+              </div>
+            </div>
+          </header>
+
+          <div className="neon-card" style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
+            <div
+              className="neon-loading-spinner"
+              style={{
+                margin: "0 auto 1.5rem",
+                width: "42px",
+                height: "42px",
+                border: "3px solid rgba(192, 132, 252, 0.2)",
+                borderTopColor: "#a855f7",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+              }}
+            />
+            <h2 style={{ fontSize: "1.3rem", fontWeight: 700, color: "#ffffff", marginBottom: "0.5rem" }}>
+              Connecting to Lobby...
+            </h2>
+            <p style={{ color: "#a1a1aa", fontSize: "0.88rem", margin: 0 }}>
+              Joining {initialTitle || "quiz"}...
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -245,18 +262,54 @@ export default function ParticipantLobby({
 
   if (error) {
     return (
-      <div className="participant-lobby-page">
-        <div className="participant-lobby-card">
-          <div className="role-logo">QuizPortal</div>
-          <h2>Quiz Unavailable</h2>
-          <p className="lobby-error-text">{error}</p>
-          <button
-            type="button"
-            className="primary-btn lobby-back-btn"
-            onClick={handleLeaveLobby}
-          >
-            ← Back to Live Quizzes
-          </button>
+      <div className="neon-theme-wrapper neon-centered-wrapper">
+        <NeonBackground />
+        <div className="neon-mobile-frame neon-centered-frame">
+          <header className="neon-header-bar">
+            <div className="neon-brand-badge">
+              <CpuIcon size={26} />
+              <div className="neon-brand-text">
+                <span className="neon-brand-org">AWS STUDENT BUILDER GROUP</span>
+                <span className="neon-brand-sub">AT NKOCET</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="neon-pill-btn"
+              onClick={handleLeaveLobby}
+            >
+              ← Back
+            </button>
+          </header>
+
+          <div className="neon-card" style={{ textAlign: "center", padding: "2.75rem 1.5rem" }}>
+            <div style={{ fontSize: "2.75rem", marginBottom: "1rem" }}>⚠️</div>
+            <div className="neon-badge-pulse" style={{ display: "inline-flex", marginBottom: "1rem" }}>
+              ● SESSION UNAVAILABLE
+            </div>
+            <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#ffffff", marginBottom: "0.75rem" }}>
+              Quiz Unavailable
+            </h2>
+            <p
+              style={{
+                color: "#a1a1aa",
+                fontSize: "0.9rem",
+                lineHeight: 1.5,
+                maxWidth: "320px",
+                margin: "0 auto 2rem",
+              }}
+            >
+              {error || "This quiz is no longer available or was removed by the host."}
+            </p>
+            <button
+              type="button"
+              className="neon-btn-primary"
+              style={{ width: "100%", justifyContent: "center" }}
+              onClick={handleLeaveLobby}
+            >
+              ← Back to Live Quizzes
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -357,7 +410,8 @@ export default function ParticipantLobby({
               <p>The host has ended this quiz session.</p>
               <button
                 type="button"
-                className="primary-btn"
+                className="neon-btn-primary"
+                style={{ width: "100%", justifyContent: "center" }}
                 onClick={handleLeaveLobby}
               >
                 Back to Live Quizzes
@@ -368,11 +422,12 @@ export default function ParticipantLobby({
           <div className="lobby-footer-action">
             <button
               type="button"
-              className="lobby-exit-link"
+              className="neon-btn-ghost"
+              style={{ width: "100%", justifyContent: "center", borderColor: "rgba(239, 68, 68, 0.3)", color: "#f87171" }}
               onClick={handleLeaveLobby}
               disabled={isLeaving}
             >
-              Leave Lobby
+              {isLeaving ? "Leaving..." : "Leave Lobby"}
             </button>
           </div>
         </div>
