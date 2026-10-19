@@ -12,6 +12,7 @@ import {
   doc,
   query,
   where,
+  onSnapshot,
 } from "firebase/firestore";
 
 import {
@@ -129,6 +130,90 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // Real-time synchronization of host's quizzes list
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const quizzesQuery = query(
+      collection(db, "quizzes"),
+      where("userId", "==", user.uid),
+    );
+
+    const unsub = onSnapshot(
+      quizzesQuery,
+      (snapshot) => {
+        const quizList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setQuizzes(quizList);
+      },
+      (error) => {
+        console.error("Error listening to user quizzes:", error);
+      }
+    );
+
+    return () => {
+      unsub();
+      setQuizzes([]);
+    };
+  }, [user?.uid]);
+
+  // Real-time questions and questionOrder synchronization for active quiz
+  useEffect(() => {
+    if (!quizId) return;
+
+    let isMounted = true;
+    let cachedQuestionOrder = null;
+    let currentQuestionsRaw = [];
+
+    const applySortingAndSet = () => {
+      if (!isMounted) return;
+      const sorted = sortQuestions(currentQuestionsRaw, cachedQuestionOrder);
+      setQuestions(sorted);
+    };
+
+    // 1. Listen to active quiz document for questionOrder updates
+    const unsubQuizDoc = onSnapshot(
+      doc(db, "quizzes", quizId),
+      (docSnap) => {
+        if (!isMounted) return;
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          cachedQuestionOrder = Array.isArray(data.questionOrder) ? data.questionOrder : null;
+          applySortingAndSet();
+        }
+      },
+      (error) => {
+        console.error("Error listening to quiz doc:", error);
+      }
+    );
+
+    // 2. Listen to questions subcollection for live count and data changes
+    const questionsColRef = collection(db, "quizzes", quizId, "questions");
+    const unsubQuestions = onSnapshot(
+      questionsColRef,
+      (snapshot) => {
+        if (!isMounted) return;
+        currentQuestionsRaw = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
+        applySortingAndSet();
+      },
+      (error) => {
+        console.error("Error listening to quiz questions:", error);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      unsubQuizDoc();
+      unsubQuestions();
+      setQuestions([]);
+    };
+  }, [quizId]);
+
   const handleSignup = async (email, password) => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
@@ -183,6 +268,23 @@ function App() {
     question.question.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const handleOpenCreateQuiz = () => {
+    setQuizId("");
+    setTitle("");
+    setDescription("");
+    setQuizCode("");
+    setQuizStatus("draft");
+    setQuestions([]);
+    setEditingQuestion(null);
+    setQuestion("");
+    setOption1("");
+    setOption2("");
+    setOption3("");
+    setOption4("");
+    setCorrectAnswer("");
+    setPage("create");
+  };
+
   const handleCreateQuiz = async () => {
     if (!title.trim()) {
       setMessage("Please enter a quiz title!");
@@ -203,14 +305,11 @@ function App() {
       });
 
       console.log("Quiz created with ID:", docRef.id);
+      setQuestions([]);
       setQuizId(docRef.id);
       setQuizCode("");
       setQuizStatus("draft");
       setPage("editor");
-      // alert("Quiz created successfully!");
-
-      // setTitle("");
-      // setDescription("");
     } catch (error) {
       console.error("Error creating quiz:", error);
       setMessage("Something went wrong while creating the quiz!");
@@ -545,9 +644,22 @@ function App() {
 
   const confirmDeleteQuiz = async () => {
     try {
-      await deleteDoc(doc(db, "quizzes", quizToDelete.id));
+      const deletedId = quizToDelete?.id;
+      await deleteDoc(doc(db, "quizzes", deletedId));
       setShowDeleteQuizDialog(false);
       setQuizToDelete(null);
+
+      // If the currently active quiz was deleted, clear it out
+      if (quizId === deletedId) {
+        setQuizId("");
+        setTitle("");
+        setDescription("");
+        setQuizCode("");
+        setQuizStatus("draft");
+        setQuestions([]);
+        setEditingQuestion(null);
+      }
+
       await handleMyQuizzes();
       setMessage("Quiz deleted successfully!");
       setTimeout(() => {
@@ -619,6 +731,7 @@ function App() {
         setPage={setPage}
         handleMyQuizzes={handleMyQuizzes}
         handleLogout={handleLogout}
+        handleOpenCreateQuiz={handleOpenCreateQuiz}
       >
         <div className="neon-dash-header">
           <div className="neon-dash-titles">
@@ -627,7 +740,7 @@ function App() {
             <p className="neon-dash-sub">Manage your active quizzes and launch new live challenges.</p>
           </div>
 
-          <button type="button" className="neon-btn-primary neon-dash-create-btn" onClick={() => setPage("create")}>
+          <button type="button" className="neon-btn-primary neon-dash-create-btn" onClick={handleOpenCreateQuiz}>
             <span className="neon-btn-icon">+</span>
             <span>Create Quiz</span>
           </button>
@@ -645,7 +758,7 @@ function App() {
 
           <div
             className="neon-card neon-dash-action-card"
-            onClick={() => setPage("create")}
+            onClick={handleOpenCreateQuiz}
           >
             <div className="neon-dash-action-icon">✨</div>
             <div className="neon-dash-action-content">
@@ -667,6 +780,7 @@ function App() {
         setPage={setPage}
         handleMyQuizzes={handleMyQuizzes}
         handleLogout={handleLogout}
+        handleOpenCreateQuiz={handleOpenCreateQuiz}
       >
         <div className="neon-create-container">
           <div className="neon-dash-header">
@@ -721,6 +835,7 @@ function App() {
         setPage={setPage}
         handleMyQuizzes={handleMyQuizzes}
         handleLogout={handleLogout}
+        handleOpenCreateQuiz={handleOpenCreateQuiz}
       >
         <div className="neon-editor-container">
           <div className="neon-card neon-editor-header-card">
@@ -925,6 +1040,7 @@ function App() {
         setPage={setPage}
         handleMyQuizzes={handleMyQuizzes}
         handleLogout={handleLogout}
+        handleOpenCreateQuiz={handleOpenCreateQuiz}
       >
         <div className="neon-quizzes-container">
           <div className="neon-dash-header">
@@ -933,7 +1049,7 @@ function App() {
               <h1 className="neon-dash-title">My Quizzes</h1>
               <p className="neon-dash-sub">Select a quiz to continue editing, view analytics, or launch.</p>
             </div>
-            <button type="button" className="neon-btn-primary" onClick={() => setPage("create")}>
+            <button type="button" className="neon-btn-primary" onClick={handleOpenCreateQuiz}>
               <span>+ Create Quiz</span>
             </button>
           </div>
@@ -943,7 +1059,7 @@ function App() {
               <div className="neon-empty-icon">📁</div>
               <h3>No Quizzes Found</h3>
               <p>You haven't created any quizzes yet. Build your first challenge now!</p>
-              <button type="button" className="neon-btn-primary" onClick={() => setPage("create")}>
+              <button type="button" className="neon-btn-primary" onClick={handleOpenCreateQuiz}>
                 + Create Your First Quiz
               </button>
             </div>
@@ -1050,6 +1166,7 @@ function App() {
           setPage={setPage}
           handleMyQuizzes={handleMyQuizzes}
           handleLogout={handleLogout}
+          handleOpenCreateQuiz={handleOpenCreateQuiz}
         >
           <HostAnalytics quizId={quizId} setPage={setPage} />
           <Toast message={message} />
@@ -1065,6 +1182,7 @@ function App() {
         setPage={setPage}
         handleMyQuizzes={handleMyQuizzes}
         handleLogout={handleLogout}
+        handleOpenCreateQuiz={handleOpenCreateQuiz}
       >
         <div className="neon-questions-container">
           <div className="neon-dash-header">

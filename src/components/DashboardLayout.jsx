@@ -8,6 +8,7 @@ export default function DashboardLayout({
   setPage,
   handleMyQuizzes,
   handleLogout,
+  handleOpenCreateQuiz,
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -75,7 +76,7 @@ export default function DashboardLayout({
             <button
               type="button"
               className={`neon-sidebar-link ${page === "create" ? "active" : ""}`}
-              onClick={() => handleNav("create")}
+              onClick={() => handleNav("create", handleOpenCreateQuiz)}
             >
               <span className="neon-nav-icon">✨</span>
               <span className="neon-nav-text">+ Create Quiz</span>
