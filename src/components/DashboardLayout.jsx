@@ -36,7 +36,7 @@ export default function DashboardLayout({
           </div>
           <button
             type="button"
-            className="neon-btn-ghost neon-mobile-menu-toggle"
+            className="neon-mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle Navigation Menu"
           >
