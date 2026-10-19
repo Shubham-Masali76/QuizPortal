@@ -12,6 +12,9 @@ export default function HostAnalytics({ quizId, setPage }) {
   const [participants, setParticipants] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [modalFeedback, setModalFeedback] = useState(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     const fetchAnalyticsData = async () => {
@@ -41,11 +44,13 @@ export default function HostAnalytics({ quizId, setPage }) {
     fetchAnalyticsData();
   }, [quizId]);
 
-  const handleExportAndReset = async () => {
-    if (!window.confirm("Are you sure? This will download the results as a CSV and permanently delete all participants and responses from this quiz so you can reuse it!")) return;
+  const handleOpenConfirm = () => {
+    setShowConfirmDialog(true);
+  };
 
+  const executeExportAndReset = async () => {
+    setIsResetting(true);
     try {
-      setLoading(true);
       // 1. Export CSV
       const csvRows = [];
       csvRows.push(["Rank", "Name", "Total Score", "Correct Answers", "Avg Speed (s)"]);
@@ -94,12 +99,26 @@ export default function HostAnalytics({ quizId, setPage }) {
         phaseEndTime: null
       });
 
-      alert("Quiz exported and reset successfully! You can now reuse this quiz.");
-      setPage("quizzes");
+      setShowConfirmDialog(false);
+      setModalFeedback({
+        type: "success",
+        title: "Quiz Exported & Reset!",
+        message: "The results CSV was downloaded to your device, and all participants and responses have been cleared. This quiz is now in draft mode and ready to be reused!",
+        actionLabel: "Back to Quizzes List",
+        onAction: () => setPage("quizzes")
+      });
     } catch (err) {
       console.error("Error resetting quiz:", err);
-      alert("An error occurred while resetting the quiz.");
-      setLoading(false);
+      setShowConfirmDialog(false);
+      setModalFeedback({
+        type: "error",
+        title: "Reset Failed",
+        message: "An error occurred while resetting the quiz: " + (err.message || "Unknown error"),
+        actionLabel: "Close",
+        onAction: () => setModalFeedback(null)
+      });
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -139,7 +158,7 @@ export default function HostAnalytics({ quizId, setPage }) {
           <p className="neon-dash-sub">Post-game participant scores, accuracy distribution, and speed metrics.</p>
         </div>
         <div className="neon-analytics-header-actions">
-          <button type="button" className="neon-btn-danger" onClick={handleExportAndReset}>
+          <button type="button" className="neon-btn-danger" onClick={handleOpenConfirm}>
             <span>📥 Export & Reset Quiz</span>
           </button>
           <button type="button" className="neon-btn-ghost" onClick={() => setPage("quizzes")}>
@@ -237,6 +256,93 @@ export default function HostAnalytics({ quizId, setPage }) {
           </table>
         </div>
       </div>
+
+      {/* Cyber Confirmation Modal for Export & Reset */}
+      {showConfirmDialog && (
+        <div className="neon-dialog-overlay">
+          <div className="neon-dialog-box">
+            <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>📥</div>
+            <h2 className="neon-dialog-title">Export & Reset Quiz?</h2>
+            <p className="neon-dialog-desc">
+              This will download the session results as a CSV spreadsheet and permanently clear all participants and live responses from this quiz so it can be re-run cleanly.
+            </p>
+
+            <div style={{
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "14px",
+              padding: "0.9rem 1.15rem",
+              marginBottom: "1.5rem",
+              textAlign: "left",
+              fontSize: "0.85rem",
+              color: "#cbd5e1"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+                <span>📁 File to Download:</span>
+                <strong style={{ color: "#38bdf8" }}>quiz_analytics_{quizId}.csv</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+                <span>👥 Participants to Clear:</span>
+                <strong style={{ color: "#f87171" }}>{participants.length} participants</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>🔄 Target Quiz State:</span>
+                <strong style={{ color: "#4ade80" }}>Draft (Ready to reuse)</strong>
+              </div>
+            </div>
+
+            <div className="neon-dialog-actions">
+              <button 
+                type="button" 
+                className="neon-btn-ghost"
+                onClick={() => setShowConfirmDialog(false)}
+                disabled={isResetting}
+                style={{ width: 'auto', padding: '0.75rem 1.75rem' }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="neon-danger-pill-btn"
+                onClick={executeExportAndReset}
+                disabled={isResetting}
+                style={{ padding: '0.75rem 1.75rem', fontSize: '0.95rem', borderRadius: '12px' }}
+              >
+                {isResetting ? "Exporting & Resetting..." : "Yes, Export & Reset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cyber Feedback Modal (Success or Error Alert) */}
+      {modalFeedback && (
+        <div className="neon-dialog-overlay">
+          <div className="neon-dialog-box">
+            <div style={{ fontSize: "2.8rem", marginBottom: "0.5rem" }}>
+              {modalFeedback.type === "success" ? "🎉" : "⚠️"}
+            </div>
+            <h2 className="neon-dialog-title" style={{
+              color: modalFeedback.type === "success" ? "#4ade80" : "#f87171"
+            }}>
+              {modalFeedback.title}
+            </h2>
+            <p className="neon-dialog-desc" style={{ marginBottom: "1.75rem" }}>
+              {modalFeedback.message}
+            </p>
+            <div className="neon-dialog-actions" style={{ justifyContent: "center" }}>
+              <button 
+                type="button" 
+                className={modalFeedback.type === "success" ? "neon-btn-primary" : "neon-btn-ghost"}
+                onClick={modalFeedback.onAction}
+                style={{ width: 'auto', padding: '0.85rem 2.25rem' }}
+              >
+                {modalFeedback.actionLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

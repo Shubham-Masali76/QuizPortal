@@ -38,6 +38,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
   // Track rank delta across rounds
   const prevRankRef = useRef(null);
   const [rankMovement, setRankMovement] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
 
   // Maintain RTDB presence in live quiz
   useEffect(() => {
@@ -182,6 +183,7 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedOption(null);
     setHasSubmitted(false);
+    setSubmitError(null);
     if (typeof document !== "undefined" && document.activeElement && typeof document.activeElement.blur === "function") {
       document.activeElement.blur();
     }
@@ -202,12 +204,13 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
     const optionNumber = optionIndex + 1;
 
     try {
+      setSubmitError(null);
       await submitResponseRTDB(quizId, quizState.currentQuestionIndex, participantId, optionNumber, currentQuestion?.id);
     } catch (err) {
       console.error("Error saving response:", err);
       setSelectedOption(null);
       setHasSubmitted(false);
-      alert("Error saving response: " + err.message);
+      setSubmitError("Could not submit answer: " + err.message);
     }
   };
 
@@ -714,6 +717,17 @@ export default function ParticipantLiveQuiz({ quizId, participantId, quizTitle: 
           {hasSubmitted && (
             <div className="neon-status-toast">
               <span>✓ Answer locked! Waiting for timer to end...</span>
+            </div>
+          )}
+
+          {submitError && (
+            <div className="neon-status-toast" style={{
+              background: "rgba(239, 68, 68, 0.15)",
+              borderColor: "rgba(239, 68, 68, 0.4)",
+              color: "#f87171",
+              marginTop: "0.85rem"
+            }}>
+              <span>⚠️ {submitError}</span>
             </div>
           )}
         </div>
