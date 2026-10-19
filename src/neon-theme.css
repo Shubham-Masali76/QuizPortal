@@ -156,6 +156,21 @@
   text-decoration: none;
 }
 
+.neon-brand-logo-img {
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), filter 0.25s ease;
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.55));
+}
+
+.neon-brand-badge:hover .neon-brand-logo-img,
+.neon-sidebar-brand:hover .neon-brand-logo-img {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 14px rgba(192, 132, 252, 0.85));
+}
+
 .neon-brand-text {
   display: flex;
   flex-direction: column;

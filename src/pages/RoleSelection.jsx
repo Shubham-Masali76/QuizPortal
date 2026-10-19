@@ -20,7 +20,7 @@ export default function RoleSelection({ onSelectRole }) {
         {/* Intro */}
         <div className="neon-role-container">
           <h1 className="neon-role-title">
-            Welcome to <span>QuizPortal</span>
+            Welcome to <span>QuizMeter</span>
           </h1>
           <p className="neon-role-subtitle">
             Choose how you would like to continue:

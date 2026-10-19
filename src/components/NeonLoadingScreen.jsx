@@ -3,7 +3,7 @@ import NeonBackground from "./NeonBackground";
 import { CpuIcon } from "./NeonIcons";
 
 export default function NeonLoadingScreen({ 
-  title = "QuizPortal",
+  title = "QuizMeter",
   subtitle = "AWS STUDENT BUILDER GROUP • NKOCET",
   status = "INITIALIZING PORTAL SESSION...",
   isExiting = false,
@@ -65,9 +65,9 @@ export default function NeonLoadingScreen({
         <div className="neon-loader-text-group">
           <div className="neon-loader-brand-sub">{subtitle}</div>
           <h1 className="neon-loader-title">
-            {title === "QuizPortal" ? (
+            {title === "QuizPortal" || title === "QuizMeter" ? (
               <>
-                Welcome to <span>QuizPortal</span>
+                Welcome to <span>QuizMeter</span>
               </>
             ) : (
               title

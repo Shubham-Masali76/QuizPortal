@@ -1,12 +1,27 @@
-export function CpuIcon({ className = "", size = 28 }) {
+import logoIcon from "../assets/logo-icon.png";
+
+export function CpuIcon({ className = "", size = 28, style = {} }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <rect x="4" y="4" width="16" height="16" rx="3" stroke="#a855f7" strokeWidth="2" fill="rgba(168, 85, 247, 0.15)" />
-      <rect x="8.5" y="8.5" width="7" height="7" rx="1.5" fill="#c084fc" />
-      <path d="M9 1V4M15 1V4M9 20V23M15 20V23M1 9H4M1 15H4M20 9H23M20 15H23" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" />
-    </svg>
+    <img
+      src={logoIcon}
+      alt="AWS Student Builder Group Logo"
+      width={size}
+      height={size}
+      className={`neon-brand-logo-img ${className}`}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        objectFit: "contain",
+        display: "inline-block",
+        verticalAlign: "middle",
+        flexShrink: 0,
+        ...style,
+      }}
+    />
   );
 }
+
+export const LogoIcon = CpuIcon;
 
 export function TrophyIcon({ className = "", size = 20, color = "#a855f7" }) {
   return (
